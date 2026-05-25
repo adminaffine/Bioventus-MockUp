@@ -1,0 +1,26 @@
+product_id,product_name,product_category,fda_clearance_number,fda_clearance_date,device_class,manufacturer,lot_number,expiry_date,recall_status,hcpcs_code
+PRD-001,DUROLANE 3mL,Pain Treatment / KOA,K173588,2017-09-05,III,Bioventus LLC,LOT-BV-2024-001,2027-01-31,None,J7323
+PRD-002,GELSYN-3 6mL,Pain Treatment / KOA,K162919,2016-09-15,III,Bioventus LLC,LOT-BV-2024-002,2027-03-31,None,J7325
+PRD-003,SUPARTZ FX 2.5mL,Pain Treatment / KOA,K130042,2013-01-22,II,Bioventus LLC,LOT-BV-2024-003,2027-05-15,None,J7321
+PRD-004,XCELL PRP System,Pain Treatment / PRP,K183562,2018-11-30,II,Bioventus LLC,LOT-BV-2024-004,2027-06-30,None,Q4151
+PRD-005,StimRouter,Pain Treatment / PNS,K192731,2019-09-20,III,Bioventus LLC,LOT-BV-2024-005,2027-08-31,None,C1767
+PRD-006,TalisMann,Pain Treatment / PNS,K250821,2025-07-30,III,Bioventus LLC,LOT-BV-2024-006,2028-01-31,None,C1823
+PRD-007,StimTrial,Pain Treatment / PNS,K250822,2025-07-30,III,Bioventus LLC,LOT-BV-2024-007,2028-06-30,None,C1824
+PRD-008,EXOGEN 4.0,Fracture Care,P900009,1994-10-05,III,Bioventus LLC,LOT-BV-2024-008,2025-09-15,RECALLED,E0760
+PRD-009,EXOGEN Lite,Fracture Care,K991137,1999-11-18,III,Bioventus LLC,LOT-BV-2024-009,2025-11-30,,E0762
+PRD-010,neXus System,Surgical / Ultrasonics,K211983,2021-10-14,,Bioventus LLC,LOT-BV-2024-010,2027-04-30,None,A4263
+PRD-011,SonaStar Elite,Surgical / Ultrasonics,K223041,2022-08-22,,Bioventus LLC,LOT-BV-2024-011,2027-07-31,None,A4264
+PRD-012,Osteocel Plus,Surgical / BGS,,2009-12-01,II,Bioventus LLC,LOT-BV-2024-012,2027-11-30,None,V2690
+PRD-013,ViviGen Cellular,Surgical / BGS,,2011-07-19,II,Bioventus LLC,LOT-BV-2024-013,2028-01-15,None,V2691
+PRD-014,Corelink SSL,Surgical / BGS,,2014-09-30,II,Bioventus LLC,LOT-BV-2024-014,2028-03-31,None,V2692
+PRD-015,Corelink Kore,Surgical / BGS,K161234,2016-05-12,,Bioventus LLC,LOT-BV-2024-015,2028-05-30,None,
+PRD-016,DUROLANE 3mL Refill Kit,Pain Treatment / KOA,K173588,2017-09-05,III,Bioventus LLC,LOT-BV-2024-016,2027-09-30,None,J7323
+PRD-017,GELSYN-3 Starter Pack,Pain Treatment / KOA,K162919,2016-09-15,III,Bioventus LLC,LOT-BV-2024-017,2027-10-30,None,J7325
+PRD-018,StimRouter Lead Kit,Pain Treatment / PNS,K192731,2019-09-20,III,Bioventus LLC,LOT-BV-2024-018,2028-02-28,None,
+PRD-019,EXOGEN Replacement Transducer,Fracture Care,P900009,1994-10-05,III,Bioventus LLC,LOT-BV-2024-019,2027-12-31,None,E0760
+PRD-020,neXus Handpiece 36kHz,Surgical / Ultrasonics,K211983,2021-10-14,II,Bioventus LLC,LOT-BV-2024-020,2027-08-15,None,A4263
+PRD-021,ViviGen Flex,Surgical / BGS,K112034,2011-07-19,II,Bioventus LLC,LOT-BV-2024-021,2028-04-30,None,V2691
+PRD-022,Corelink CoreDisc,Surgical / BGS,K143891,2014-09-30,II,Bioventus LLC,LOT-BV-2024-022,2028-01-31,None,V2692
+PRD-023,Osteocel XO,Surgical / BGS,K093982,2009-12-01,,Bioventus LLC,LOT-BV-2024-023,2028-02-15,None,V2690
+PRD-024,BioBurs System,Surgical / Ultrasonics,K223041,2022-08-22,II,Bioventus LLC,LOT-BV-2024-024,2028-05-01,None,
+PRD-025,XCELL Cartridge Pack,Pain Treatment / PRP,K183562,2018-11-30,II,Bioventus LLC,LOT-BV-2024-025,2028-06-15,None,Q4151

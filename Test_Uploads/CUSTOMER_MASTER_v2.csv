@@ -1,0 +1,41 @@
+customer_id,first_name,last_name,email,phone,date_of_birth,address,city,state,zip,country,account_status,loyalty_tier
+100000,Danielle,Johnson,john21@example.net,(819) 600-1338,1979-04-09,863 Lawrence Valleys,Port Lindachester,LA,45098,USA,Active,Bronze
+100001,Cassandra,Roman,yherrera@example.org,555-1234,1975-08-15,310 Kendra Common Apt. 164,Reidstad,Pennsylvania,21820,USA,Pending,Platinum
+100002,Steven,Nelson,gabriellecameron@example.org,(305) 641-3953,1983-03-03,724 John Points Suite 969,Coxberg,WA,67285,USA,Pending,Bronze
+100003,Patrick,Ferrell,tasha01@example.net,(845) 146-2704,2006-04-09,148 Eric Track,New Stephanie,Florida,70015,USA,Churned,Bronze
+100004,John,Bradley,millertodd@example.org,(822) 782-4896,2005-09-20,465 Lam Mission,East Jeffreymouth,AZ,3258,USA,Pending,Platinum
+100005,Rebecca,Heath,palmerjoshua@example.com,(382) 997-3763,1942-03-17,6670 Bruce Stream Suite 133,New Shane,IL,55797,USA,Churned,Bronze
+100006,Mary,Novak,,(326) 773-6026,1935-06-24,7468 Moore Hill Apt. 098,Lake Leeton,IN,77070,USA,Active,Platinum
+100007,Carlos,Hensley,,(619) 399-0916,1983-04-24,3534 Anderson Rue Suite 751,South Christineshire,FL,13605,USA,Pending,Platinum
+100008,Justin,Kim,,(849) 808-4124,1943-09-30,824 Jacobs Stravenue,Jamesview,CT,66745,USA,Inactive,Platinum
+100009,Dana,Green,barnold@example.net,(011) 280-5982,1966-09-11,5053 Elizabeth Knoll,Dicksonberg,Georgia,31530,USA,Inactive,Bronze
+100010,Kristin,Rodriguez,garrisonjeffrey@example.com,(543) 303-6541,2005-11-27,8685 Darrell Green Apt. 940,New Ryanmouth,Iowa,57700,USA,Churned,Platinum
+100011,April,Drake,michaeljones@example.net,(595) 148-4656,,236 Byrd Extensions Suite 680,Justinchester,Illinois,76520,USA,Active,Platinum
+100012,Justin,Beck,clarence34@example.org,(320) 037-9176,2000-01-04,676 Dylan Spurs,Port Michelleville,NV,56225,USA,Pending,Silver
+100013,Laurie,Contreras,stephanie79@example.net,(868) 727-7434,1991-03-24,347 Jennifer Freeway Suite 558,East Edwardfurt,KS,91458,USA,Active,Bronze
+100014,Jamie,Fisher,gateskathy@example.com,(705) 466-8893,1970-12-18,7065 Ramsey Ville Suite 298,South Brittanytown,South Dakota,11504,USA,Churned,Bronze
+100015,Mark,Juarez,aramirez@example.com,(170) 805-3100,2004-08-23,92327 Anne Forge,Lyonsstad,MN,22493,USA,Churned,Platinum
+100016,Erica,Rubio,mdavid@example.org,(931) 491-9058,1966-08-05,85067 Ryan Lake Suite 262,Christinaside,Florida,63873,USA,Churned,Silver
+100017,Karen,Hudson,frogers@example.com,(273) 545-4948,,313 Freeman Trace,Lake Thomas,DE,93803,USA,Inactive,Silver
+100018,Miguel,Tran,ronald85@example.com,(744) 431-3518,2004-09-26,37498 Hooper Village,West Jeremy,Michigan,24020,USA,Churned,Gold
+100019,Dana,Mullins,salasaudrey@example.com,(775) 204-7116,1971-03-21,29413 Angela Mall,Port Alexandra,MN,59550,USA,Pending,Gold
+100020,Stacey,Clark,josephmiller@example.org,(281) 206-7974,,44713 French Road,South Danny,Oklahoma,29967,USA,Pending,Silver
+100021,Scott,Harrison,holly48@example.net,(771) 906-5940,1941-12-27,490 Thomas Run,Moonburgh,Florida,77221,USA,Churned,Bronze
+100022,Mark,Steele,,(468) 071-5451,2006-02-23,087 Brown Path Suite 977,East Josephberg,Maryland,38253,USA,Churned,Bronze
+100023,Andrea,Davis,,(171) 274-8467,,78263 Michelle Harbor Suite 584,West Jessicashire,OH,76512,USA,Inactive,Platinum
+100024,Stanley,Morris,tinaallen@example.com,(360) 576-6270,,951 Garcia Motorway,Lake Douglasberg,Utah,10308,USA,Pending,Gold
+100025,Courtney,,cbrennan@example.net,(134) 316-1172,1985-12-25,50455 Thomas Pines,Knightburgh,WY,22781,USA,Active,Silver
+100026,Steven,King,elizabeth74@example.net,(821) 759-4647,,67136 Andrews Squares Suite 064,New Michelleton,DE,79983,USA,Active,Platinum
+100027,Courtney,Berger,parkerscott@example.net,(521) 456-2328,1999-04-21,842 Sloan Orchard Suite 517,East Karenbury,NM,89148,USA,Pending,Bronze
+100028,Miguel,Curry,brenda51@example.net,(370) 985-9317,2001-09-15,612 Sophia Hollow Suite 113,South Shawn,TN,88382,USA,Active,Platinum
+100029,Antonio,Wood,pwallace@example.com,(158) 506-4317,1942-01-05,900 Sanchez Crossroad,North Maria,AR,73142,USA,Pending,Platinum
+100030,Vanessa,Fernandez,danieldelacruz@example.org,(053) 950-2402,1989-06-20,177 Palmer Coves,Gordonton,Nevada,95822,USA,Pending,Silver
+100031,Jennifer,Wallace,morriseddie@example.org,(499) 856-9847,,18367 Robert Views Suite 661,Ronaldview,Tennessee,49561,USA,Pending,Platinum
+100032,Angela,Willis,elizabeth65@example.net,(604) 945-1983,1946-08-13,15851 Andrews Valley Suite 899,New Sarahview,Washington,4295,USA,Churned,Silver
+100033,Chad,Figueroa,davisalyssa@example.com,(675) 254-5991,1999-10-22,90147 Tucker Mills,Nelsonhaven,AZ,15419,USA,Churned,Gold
+100034,Randall,Greene,harrissierra@example.org,(445) 107-6226,1974-03-14,851 Hensley Canyon,Smithland,IL,41534,USA,Churned,Platinum
+100035,George,Meza,xcollier@example.org,(613) 696-8164,1989-10-07,2181 Rebecca Keys,Jessicaberg,MN,31469,USA,Inactive,Bronze
+100036,Steven,Elliott,kmaldonado@example.net,(955) 271-7744,1978-06-30,147 Johnson Land Suite 119,Fordside,NH,97352,USA,Active,Bronze
+100037,Shannon,Shepherd,toni18@example.net,(203) 778-8925,1962-07-16,6590 Jones Court Suite 449,West Christopher,KY,87481,USA,Inactive,Platinum
+100038,Dawn,Murphy,elizabethcalderon@example.net,(816) 850-5423,1960-04-07,32214 William Plains Apt. 592,Mooreburgh,OK,91313,USA,Active,Gold
+100039,Karen,Bowers,amandacollins@example.com,N/A,2001-04-24,9774 Shaw Manor,Port James,HI,79755,USA,Pending,Bronze

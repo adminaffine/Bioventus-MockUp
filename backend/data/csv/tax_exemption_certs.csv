@@ -1,0 +1,13 @@
+cert_id,customer_id,customer_name,customer_segment,cert_status,cert_number,issuing_state,expiry_date,days_to_expiry,tax_exempt_type,revenue_at_risk,orders_affected,action_required
+CERT-001,CUST-1001,Northside Orthopedics,Health System,VALID,NC-EX-2024-0011,NC,2027-12-31,612,501(c)(3) Non-Profit Hospital,0.0,,No action required. Cert valid through 2027.
+CERT-002,CUST-1003,Raleigh Clinic,Spine Center,VALID,NC-EX-2024-0013,NC,2027-12-31,612,501(c)(3) Non-Profit Hospital,0.0,,No action required.
+CERT-003,CUST-1006,Coastal Partners,Health System,VALID,NC-EX-2024-0016,NC,2027-12-31,612,501(c)(3) Non-Profit Hospital,0.0,,No action required.
+CERT-004,CUST-1008,Blue Clinic,Spine Center,VALID,NC-EX-2024-0018,NC,2027-12-31,612,501(c)(3) Non-Profit Hospital,0.0,,No action required.
+CERT-005,CUST-1011,Atlantic Distribution,Health System,EXPIRED,NC-EX-2022-0111,NC,2025-06-30,-302,501(c)(3) Non-Profit Hospital,650.0,ORD-022,URGENT: Cert expired June 2025. Suspend tax-exempt status until renewed.
+CERT-006,CUST-1012,Carolina Logistics,Spine Center,EXPIRED,NC-EX-2022-0112,NC,2025-06-30,-302,501(c)(3) Non-Profit Hospital,850.0,ORD-023,URGENT: Cert expired. Suspend tax-exempt status and request renewal.
+CERT-007,CUST-1016,Inactive One,Health System,EXPIRED,NC-EX-2021-0116,NC,2025-06-30,-302,501(c)(3) Non-Profit Hospital,1700.0,ORD-027,URGENT: Expired cert with order processed as tax-exempt.
+CERT-008,CUST-1018,Inactive Three,Spine Center,EXPIRED,NC-EX-2021-0118,NC,2025-06-30,-302,501(c)(3) Non-Profit Hospital,0.0,,Cert expired. No recent orders but status must be corrected.
+CERT-009,CUST-1021,Pending One,Health System,MISSING,,NC,,,501(c)(3) Non-Profit Hospital,0.0,,No cert on file. Obtain before first order.
+CERT-010,CUST-1023,Pending One,Spine Center,MISSING,,NC,,,501(c)(3) Non-Profit Hospital,0.0,,No cert on file. Pending account.
+CERT-011,CUST-1026,Capital Institute,Health System,MISSING,,NC,,,501(c)(3) Non-Profit Hospital,5900.0,ORD-006|ORD-015,CRITICAL: No cert on file. Obtain cert and address recalled order.
+CERT-012,CUST-1028,East Center,Spine Center,MISSING,,NC,,,501(c)(3) Non-Profit Hospital,30500.0,ORD-008|ORD-014|ORD-030,CRITICAL: No cert on file. Highest risk customer for Tax team.

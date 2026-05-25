@@ -1,0 +1,7 @@
+dso_id,order_id,customer_id,customer_name,product_name,order_amount,payment_method,simulated_dso_days,dso_benchmark,dso_variance,dq_issue_type,collection_at_risk,action_required
+DSO-001,ORD-009,CUST-9901,Unknown Customer (Orphan),DUROLANE 3mL,850.0,PO,42,30,12,Orphan customer — no billing contact in master,850.0,Cannot send invoice to orphan customer. Create customer master record to unblock collection.
+DSO-002,ORD-010,CUST-9902,Unknown Customer (Orphan),StimRouter,12000.0,PO,42,30,12,Orphan customer — no billing contact in master,12000.0,"Cannot collect $12,000 without valid customer record. Highest DSO risk item."
+DSO-003,ORD-011,CUST-9903,Unknown Customer (Orphan),DUROLANE 3mL,850.0,PO,42,30,12,Orphan customer — no billing contact in master,850.0,Restore customer master record to enable invoicing.
+DSO-004,ORD-012,CUST-9904,Unknown Customer (Orphan),StimRouter,12000.0,PO,42,30,12,Orphan customer — no billing contact in master,12000.0,"$12,000 blocked. Second-largest DSO risk item after DSO-002."
+DSO-005,ORD-027,CUST-1016,Inactive One,DUROLANE 3mL,1700.0,Net30,35,30,5,Inactive account — collection process uncertain,1700.0,Account marked Inactive. Confirm collection status with Finance. May require write-off process.
+DSO-006,ORD-028,CUST-1017,Inactive Two,DUROLANE 3mL,1700.0,Net30,35,30,5,Inactive account — collection process uncertain,1700.0,Inactive account DSO risk. Confirm with Finance whether to collect or write off.

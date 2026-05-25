@@ -1,0 +1,21 @@
+contract_id,customer_id,product_id,product_name,gpo_name,tier,contracted_price,charged_price,price_variance,membership_verified,contract_start,contract_end,days_to_expiry,contract_status,linked_order_id,conflict_flag,conflict_reason
+GPC-001,CUST-1001,PRD-001,DUROLANE 3mL,Premier,Tier2,720.0,850.0,130.0,TRUE,2024-01-01,2026-12-31,248,ACTIVE,ORD-001,TRUE,"Customer charged list price $850, Premier Tier2 contract = $720. Overcharge $130/unit x2 = $260."
+GPC-002,CUST-1026,PRD-001,DUROLANE 3mL,Premier,Tier2,720.0,850.0,130.0,TRUE,2024-01-01,2026-12-31,248,ACTIVE,ORD-006,TRUE,"Customer charged list price $850, Premier Tier2 contract = $720. Overcharge $130/unit x2 = $260."
+GPC-003,CUST-1005,PRD-005,StimRouter,HealthTrust,Tier1,10800.0,12000.0,1200.0,FALSE,2024-06-01,2026-12-31,248,ACTIVE,ORD-010,TRUE,"Customer charged $12,000, HealthTrust Tier1 contract = $10,800. Overcharge $1,200. MEMBERSHIP UNVERIFIED."
+GPC-004,CUST-1007,PRD-005,StimRouter,HealthTrust,Tier1,10800.0,12000.0,1200.0,FALSE,2024-06-01,2026-12-31,248,ACTIVE,ORD-012,TRUE,"Customer charged $12,000, HealthTrust Tier1 contract = $10,800. Overcharge $1,200. MEMBERSHIP UNVERIFIED."
+GPC-005,CUST-1003,PRD-010,neXus System,Vizient,Tier2,7650.0,8500.0,850.0,TRUE,2023-01-01,2026-12-31,248,ACTIVE,ORD-005,TRUE,"Customer charged $8,500, Vizient Tier2 contract = $7,650. Overcharge $850/unit x2 = $1,700."
+GPC-011,CUST-1027,PRD-006,TalisMann,Premier,Tier1,12000.0,14000.0,0.0,TRUE,2025-05-01,2026-05-26,28,EXPIRING,ORD-029,FALSE,Contract expires in 28 days. Renewal required to maintain Tier1 pricing for TalisMann.
+GPC-012,CUST-1028,PRD-007,StimTrial,Premier,Tier1,11500.0,13500.0,0.0,TRUE,2025-05-01,2026-05-26,28,EXPIRING,ORD-030,FALSE,Contract expires in 28 days. Renewal required to maintain Tier1 pricing for StimTrial.
+GPC-006,CUST-1002,PRD-002,GELSYN-3 6mL,Premier,Tier2,650.0,720.0,0.0,TRUE,2024-01-01,2027-06-30,428,ACTIVE,ORD-002,FALSE,Compliant. Charged within contracted range.
+GPC-007,CUST-1027,PRD-002,GELSYN-3 6mL,Vizient,Tier2,650.0,720.0,0.0,TRUE,2024-01-01,2027-06-30,428,ACTIVE,ORD-007,FALSE,Compliant.
+GPC-008,CUST-1003,PRD-003,SUPARTZ FX 2.5mL,Vizient,Tier3,585.0,650.0,0.0,TRUE,2024-01-01,2027-06-30,428,ACTIVE,ORD-003,FALSE,Compliant.
+GPC-009,CUST-1004,PRD-009,EXOGEN Lite,Vizient,Tier2,810.0,900.0,0.0,TRUE,2024-01-01,2027-06-30,428,ACTIVE,ORD-004,FALSE,Compliant.
+GPC-010,CUST-1005,PRD-010,neXus System,HealthTrust,Tier1,7650.0,8500.0,0.0,TRUE,2024-01-01,2027-06-30,428,ACTIVE,ORD-005,FALSE,Compliant. Different product line from conflict.
+GPC-013,CUST-1009,PRD-003,SUPARTZ FX 2.5mL,,,,650.0,,FALSE,,,,NO_GPO,ORD-020,FALSE,Orphan customer — no GPO membership. Paying list price $650 vs Vizient Tier3 $585. Missing $65/unit savings.
+GPC-014,CUST-1012,PRD-001,DUROLANE 3mL,CONFLICT,,,,850.0,,FALSE,,,,CONFLICT,ORD-023,TRUE
+GPC-015,CUST-1028,PRD-010,neXus System,HealthTrust,Tier1,7650.0,8500.0,0.0,TRUE,2024-01-01,2027-06-30,428,ACTIVE,ORD-008,FALSE,Compliant.
+GPC-016,CUST-1026,PRD-008,EXOGEN 4.0,Premier,Tier1,3780.0,4200.0,0.0,TRUE,2024-01-01,2025-09-14,0,RECALLED,ORD-015,TRUE,Product recalled 2025-09-15. This contract is now void. Order placed after recall = regulatory violation.
+GPC-017,CUST-1027,PRD-008,EXOGEN 4.0,Vizient,Tier2,3780.0,4200.0,0.0,TRUE,2024-01-01,2025-09-14,0,RECALLED,ORD-013,TRUE,Product recalled. Contract void. Order ORD-013 placed after recall.
+GPC-018,CUST-1002,PRD-010,neXus System,Premier,Tier1,7650.0,8500.0,0.0,TRUE,2024-01-01,2027-06-30,428,ACTIVE,,FALSE,Compliant. No orders yet in period.
+GPC-019,CUST-1006,PRD-002,GELSYN-3 6mL,Premier,Tier1,650.0,720.0,0.0,TRUE,2024-01-01,2027-06-30,428,ACTIVE,,FALSE,Compliant.
+GPC-020,CUST-1008,PRD-003,SUPARTZ FX 2.5mL,HealthTrust,Tier2,585.0,650.0,0.0,TRUE,2024-01-01,2027-06-30,428,ACTIVE,,FALSE,Compliant.

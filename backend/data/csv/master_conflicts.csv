@@ -1,0 +1,16 @@
+customer_id,field_name,crm_value,erp_value,conflict_type
+CUST-1006,email,contact0@clinic.com,admin0@clinic.org,Email mismatch CRM vs ERP
+CUST-1007,email,contact1@clinic.com,admin1@clinic.org,Email mismatch CRM vs ERP
+CUST-1008,email,contact2@clinic.com,admin2@clinic.org,Email mismatch CRM vs ERP
+CUST-1009,email,contact3@clinic.com,admin3@clinic.org,Email mismatch CRM vs ERP
+CUST-1010,email,contact4@clinic.com,admin4@clinic.org,Email mismatch CRM vs ERP
+CUST-1011,address,100 Billing Ave,200 Shipping Blvd,Address conflict — billing vs shipping
+CUST-1012,address,101 Billing Ave,201 Shipping Blvd,Address conflict — billing vs shipping
+CUST-1013,address,102 Billing Ave,202 Shipping Blvd,Address conflict — billing vs shipping
+CUST-1014,address,103 Billing Ave,203 Shipping Blvd,Address conflict — billing vs shipping
+CUST-1015,address,104 Billing Ave,204 Shipping Blvd,Address conflict — billing vs shipping
+CUST-1016,account_status,ACTIVE,SUSPENDED,Status conflict — reactivation pending
+CUST-1017,account_status,ACTIVE,SUSPENDED,Status conflict — reactivation pending
+CUST-1018,account_status,ACTIVE,SUSPENDED,Status conflict — reactivation pending
+CUST-1019,account_status,ACTIVE,SUSPENDED,Status conflict — reactivation pending
+CUST-1020,account_status,ACTIVE,SUSPENDED,Status conflict — reactivation pending

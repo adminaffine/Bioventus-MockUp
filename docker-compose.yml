@@ -1,0 +1,73 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "18005:8005"
+    # Load Azure/OpenAI keys from backend/.env (do not override with empty env here)
+    env_file:
+      - ./backend/.env
+    environment:
+      - AI_PROVIDER=ollama
+      - OLLAMA_BASE_URL=http://host.docker.internal:11434
+      - OLLAMA_MODEL=qwen2.5:3b-instruct
+      - OLLAMA_TIMEOUT_SEC=20
+    volumes:
+      - ./backend/data:/app/data
+      # Persist Test_Uploads (from seed_test_uploads.py) on host
+      - ./Test_Uploads:/Test_Uploads
+    command: >
+      sh -c "[ -f data/luminos_demo.db ] || python data/seed_data.py 2>/dev/null || true &&
+             [ -f /Test_Uploads/CUSTOMER_MASTER_One.csv ] || python data/seed_test_uploads.py 2>/dev/null || true &&
+             uvicorn main:app --host 0.0.0.0 --port 8005"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8005/api/dashboard/summary', timeout=5)"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 20s
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "15174:5174"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      # Browser will call backend at unique host port
+      - VITE_API_URL=http://localhost:18005
+    depends_on:
+      backend:
+        condition: service_healthy
+    command: >
+      sh -c "([ -d node_modules ] && [ \"$(ls -A node_modules 2>/dev/null)\" ]) || npm install &&
+             npm run dev -- --host 0.0.0.0 --port 5174"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:5174 || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 20s
+
+  ui_sanity:
+    profiles: ["validation"]
+    image: mcr.microsoft.com/playwright:v1.59.1-noble
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+    environment:
+      - UI_BASE_URL=http://frontend:5174
+      - API_REWRITE_FROM=http://localhost:18005
+      - API_REWRITE_TO=http://backend:8005
+    depends_on:
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
+    command: >
+      sh -c "npm ci &&
+             npm run sanity:ui"
+

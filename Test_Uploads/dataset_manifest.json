@@ -1,0 +1,189 @@
+{
+  "generated_at": "2026-04-28T18:20:40.800923Z",
+  "seed": 42,
+  "description": "Test uploads for Upload & Analyze, Data Quality Profiler, and Data Governance (integrity/schema drift).",
+  "datasets": [
+    {
+      "file": "CUSTOMER_MASTER_One.csv",
+      "row_count": 200,
+      "columns": [
+        "customer_id",
+        "first_name",
+        "last_name",
+        "email",
+        "phone",
+        "dob",
+        "address",
+        "city",
+        "state",
+        "zip",
+        "country",
+        "customer_segment",
+        "account_status",
+        "ssn",
+        "credit_card_number",
+        "bank_account_number",
+        "insurance_id",
+        "ethnicity",
+        "annual_income",
+        "ip_address",
+        "passport_number",
+        "drivers_license",
+        "emergency_contact_phone"
+      ],
+      "embedded_issue_counts": {
+        "missing_email": 20,
+        "duplicate_customer_id": 20,
+        "invalid_phone": 10,
+        "missing_dob": 30,
+        "inconsistent_state": "mixed",
+        "missing_last_name": 10,
+        "customer_segment_casing": "mixed"
+      },
+      "expected_join_key": "customer_id"
+    },
+    {
+      "file": "CUSTOMER_MASTER_v2.csv",
+      "row_count": 40,
+      "columns": [
+        "customer_id",
+        "first_name",
+        "last_name",
+        "email",
+        "phone",
+        "date_of_birth",
+        "address",
+        "city",
+        "state",
+        "zip",
+        "country",
+        "account_status",
+        "loyalty_tier"
+      ],
+      "purpose": "Data Governance / Schema drift demo",
+      "embedded_issue_counts": {
+        "schema_drift": "dob->date_of_birth, customer_segment removed, loyalty_tier added, zip as integer"
+      },
+      "expected_join_key": "customer_id"
+    },
+    {
+      "file": "PRODUCT_CATALOG_One.csv",
+      "row_count": 100,
+      "columns": [
+        "product_id",
+        "product_name",
+        "product_category",
+        "fda_clearance_number",
+        "fda_clearance_date",
+        "device_class",
+        "manufacturer",
+        "lot_number",
+        "expiry_date",
+        "recall_status",
+        "hcpcs_code"
+      ],
+      "embedded_issue_counts": {
+        "missing_fda_clearance_number": 10,
+        "missing_device_class": 15,
+        "expiry_past_recall_null": 20,
+        "missing_hcpcs_code": 25,
+        "product_name_casing_inconsistent": "mixed",
+        "fda_date_after_expiry_date": 5,
+        "manufacturer_whitespace": 12
+      },
+      "expected_join_key": "product_id"
+    },
+    {
+      "file": "SALES_ORDERS_One.csv",
+      "row_count": 200,
+      "columns": [
+        "order_id",
+        "customer_id",
+        "product_id",
+        "product_name",
+        "order_date",
+        "ship_date",
+        "quantity",
+        "unit_price",
+        "total_amount",
+        "sales_rep_id",
+        "region",
+        "payment_method",
+        "revenue_recognized",
+        "billing_address",
+        "cardholder_name",
+        "card_last_four",
+        "billing_email",
+        "tax_id"
+      ],
+      "embedded_issue_counts": {
+        "orphan_customer_id": 20,
+        "ship_date_before_order_date": 10,
+        "negative_total_amount": 6,
+        "missing_revenue_recognized": 16,
+        "null_sales_rep_id": 20,
+        "quantity_zero_total_positive": 4,
+        "payment_method_inconsistent": "mixed"
+      },
+      "expected_join_key": "customer_id"
+    },
+    {
+      "file": "PATIENT_SUPPORT_One.csv",
+      "row_count": 200,
+      "columns": [
+        "case_id",
+        "patient_id",
+        "customer_id",
+        "product_id",
+        "case_type",
+        "case_date",
+        "resolution_date",
+        "adverse_event_flag",
+        "mdr_submitted",
+        "consent_obtained",
+        "phi_data_present",
+        "case_status",
+        "assigned_rep",
+        "diagnosis_code",
+        "treatment_notes",
+        "prescribing_physician",
+        "npi_number",
+        "patient_dob",
+        "home_address",
+        "health_plan_id",
+        "copay_amount"
+      ],
+      "embedded_issue_counts": {
+        "adverse_event_mdr_not_submitted": 27,
+        "phi_present_consent_missing": 40,
+        "closed_no_resolution_date": 20,
+        "orphan_customer_id": 10,
+        "orphan_product_id": 8,
+        "resolution_before_case_date": 5
+      },
+      "expected_join_key": "customer_id"
+    }
+  ],
+  "join_keys": [
+    {
+      "left": "SALES_ORDERS_One.csv",
+      "right": "CUSTOMER_MASTER_One.csv",
+      "key": "customer_id"
+    },
+    {
+      "left": "SALES_ORDERS_One.csv",
+      "right": "PRODUCT_CATALOG_One.csv",
+      "key": "product_id"
+    },
+    {
+      "left": "PATIENT_SUPPORT_One.csv",
+      "right": "CUSTOMER_MASTER_One.csv",
+      "key": "customer_id"
+    },
+    {
+      "left": "PATIENT_SUPPORT_One.csv",
+      "right": "PRODUCT_CATALOG_One.csv",
+      "key": "product_id"
+    }
+  ]
+}
