@@ -1,4 +1,39 @@
+import { taxDemoSessionHeaders } from "./taxSession";
+import { pricingDemoSessionHeaders } from "./pricingSession";
+import { stewardDemoSessionHeaders } from "./stewardSession";
+import { cfoDemoSessionHeaders } from "./cfoSession";
+import { ccoDemoSessionHeaders } from "./ccoSession";
+import { vpDemoSessionHeaders } from "./vpSession";
+
 const API_BASE = import.meta.env.VITE_API_URL || "";
+
+function taxFetch<T>(path: string, options?: RequestInit): Promise<T> {
+  return fetchApi<T>(path, {
+    ...options,
+    headers: { ...taxDemoSessionHeaders(), ...(options?.headers as Record<string, string>) },
+  });
+}
+
+function cfoFetch<T>(path: string, options?: RequestInit): Promise<T> {
+  return fetchApi<T>(path, {
+    ...options,
+    headers: { ...cfoDemoSessionHeaders(), ...(options?.headers as Record<string, string>) },
+  });
+}
+
+function ccoFetch<T>(path: string, options?: RequestInit): Promise<T> {
+  return fetchApi<T>(path, {
+    ...options,
+    headers: { ...ccoDemoSessionHeaders(), ...(options?.headers as Record<string, string>) },
+  });
+}
+
+function vpFetch<T>(path: string, options?: RequestInit): Promise<T> {
+  return fetchApi<T>(path, {
+    ...options,
+    headers: { ...vpDemoSessionHeaders(), ...(options?.headers as Record<string, string>) },
+  });
+}
 
 export async function fetchApi<T>(path: string, options?: RequestInit): Promise<T> {
   const headers: Record<string, string> = {};
@@ -118,6 +153,701 @@ export interface TaxJurisdictionMismatchRow {
   mismatch_ship_bill_to: string;
   tax_risk: number;
   tag: "PRIORITY" | "ORPHAN" | "RECALLED" | null;
+}
+
+export interface TaxHeadline {
+  total_exposure: number;
+  active_mismatches: number;
+  pre_invoice_alerts: number;
+  annualized_exposure: number;
+  next_invoice_days?: number;
+}
+
+export interface TaxDataQualityHealth {
+  metric: string;
+  score: number;
+  status: string;
+}
+
+export interface TaxKpiCard {
+  name: string;
+  value: number;
+  unit: "open" | "dollars";
+  description: string;
+}
+
+export interface TaxIssueRow {
+  issue_id: string;
+  order_id: string;
+  customer_id: string;
+  customer_name: string;
+  issue_type: string;
+  priority: "HIGH" | "MEDIUM" | "LOW";
+  dollar_value: number;
+  invoice_status: string;
+  urgency_label: string;
+  owner_id: string;
+  owner_name: string;
+  ai_fix: string;
+  ai_confidence: number;
+  ai_source: string;
+  correct_jurisdiction: string;
+  applied_jurisdiction: string;
+  ship_to_state: string;
+  bill_to_state: string;
+  product: string;
+  sla_days_remaining: number;
+  opened_date: string;
+  status: string;
+  address_record: string;
+  pre_invoice: number;
+  rate_difference: number;
+  capa_id: string;
+  ai_decision?: "approve" | "reject" | null;
+  ai_decision_at?: string;
+}
+
+export interface TaxDashboard {
+  headline: TaxHeadline;
+  data_quality_health: TaxDataQualityHealth[];
+  kpi_cards: TaxKpiCard[];
+  top_alerts: TaxIssueRow[];
+  all_open_issues: TaxIssueRow[];
+  ai_queue: TaxIssueRow[];
+  my_action_queue: TaxIssueRow[];
+}
+
+export interface TaxIssueWorkflow {
+  ai_approved: boolean;
+  manual_ready: boolean;
+  can_mark_resolved: boolean;
+  acknowledged_at?: string | null;
+  transaction_reviewed_at?: string | null;
+  address_update_queued_at?: string | null;
+  resolution_path: "ai" | "manual" | "manual_in_progress";
+}
+
+export interface TaxIssueDetail {
+  issue: TaxIssueRow;
+  workflow: TaxIssueWorkflow;
+  header: Record<string, string | number>;
+  what_happened: string;
+  business_risk: { risk_type: string; status: string; detail: string }[];
+  owner: { owner_id: string; owner_name: string; assigned_on: string; next_action: string; sla_remaining: string };
+  ai_recommendation: { fix: string; confidence: number; source: string; order_id: string; correct_jurisdiction: string; decision?: "approve" | "reject" | null };
+  affected_records: { customer: string; order: string; address_record: string; current_jurisdiction: string }[];
+  prescribed_actions: string[];
+  why_it_happened: string;
+  preventive_actions: string[];
+  capa_linkage: { capa_id: string; regulation: string; status: string; owner: string; due_date: string };
+}
+
+export interface TaxTransactionDetail {
+  order_header: Record<string, string | number>;
+  jurisdiction_breakdown: {
+    ship_to_state: string;
+    bill_to_state: string;
+    jurisdiction_applied: string;
+    correct_jurisdiction: string;
+    rate_difference: string;
+    tax_exposure: number;
+  };
+  what_went_wrong: string;
+  customer_id?: string;
+  ai_recommendation: { fix: string; confidence: number; source: string; decision?: "approve" | "reject" | null };
+  order_trail: { date: string; event: string; jurisdiction: string; status: string; correction: string }[];
+  address_accuracy: { confidence: number; signal: string; penalty_exposure: number };
+  customer_hierarchy: { idn: string; hospital: string; clinic: string };
+  cross_team_visibility: { team: string; issue: string; owner: string }[];
+  capa_linkage: { capa_id: string; regulation: string; status: string; owner: string; due_date: string };
+  issue_id: string;
+  workflow: TaxIssueWorkflow;
+}
+
+export interface TaxClosure {
+  resolution_confirmation: {
+    issue: string;
+    resolved_by: string;
+    date: string;
+    resolution_type: string;
+    exposure_recovered: number;
+  };
+  what_was_updated: string[];
+  ai_action_log: { recommendation: string; approved_by: string; confidence: number; logged_on: string };
+  kpi_impact: Record<string, { before: number | string; after: number | string }>;
+  cross_team_notifications: { team: string; owner: string; notification: string }[];
+  issue_id: string;
+  ai_decision?: "approve" | "reject" | null;
+}
+
+export interface PricingHeadline {
+  total_exposure: number;
+  active_conflicts: number;
+  expiring_contracts: number;
+}
+
+export interface PricingDataQualityHealth {
+  metric: string;
+  score: number;
+  status: string;
+}
+
+export interface PricingKpiCard {
+  name: string;
+  value: number;
+  unit: "open" | "dollars";
+  description: string;
+  filter_type: string;
+}
+
+export interface PricingIssueRow {
+  issue_id: string;
+  order_id: string;
+  customer_id: string;
+  customer_name: string;
+  issue_type: string;
+  priority: "HIGH" | "MEDIUM" | "LOW";
+  dollar_value: number;
+  invoice_status: string;
+  urgency_label: string;
+  owner_id: string;
+  owner_name: string;
+  ai_fix: string;
+  ai_confidence: number;
+  ai_source: string;
+  correct_tier: string;
+  applied_tier: string;
+  gpo_name: string;
+  product: string;
+  sla_days_remaining: number;
+  opened_date: string;
+  status: string;
+  contract_id: string;
+  credit_memo_required: number;
+  overcharge_per_unit: number;
+  quantity_affected: number;
+  capa_id: string;
+  ai_decision?: "approve" | "reject" | null;
+}
+
+export interface PricingDashboard {
+  headline: PricingHeadline;
+  data_quality_health: PricingDataQualityHealth[];
+  kpi_cards: PricingKpiCard[];
+  top_alerts: PricingIssueRow[];
+  ai_queue: PricingIssueRow[];
+  my_action_queue: PricingIssueRow[];
+  all_open_issues: PricingIssueRow[];
+}
+
+export interface PricingWorkflowStatus {
+  ai_approved: boolean;
+  credit_memo_queued: boolean;
+  can_mark_resolved: boolean;
+  resolution_path: string;
+}
+
+export interface PricingIssueDetail {
+  issue: PricingIssueRow;
+  header: Record<string, string | number>;
+  what_happened: string;
+  business_risk: { risk_type: string; status: string; detail: string }[];
+  owner: { owner_id: string; owner_name: string; assigned_on: string; next_action: string; sla_remaining: string };
+  ai_recommendation: { fix: string; confidence: number; source: string; order_id: string; correct_tier: string };
+  affected_records: { record_type: string; record_id: string; customer: string; contract: string; detail: string }[];
+  has_order: boolean;
+  prescribed_actions: string[];
+  why_it_happened: string;
+  preventive_actions: string[];
+  capa_linkage: { capa_id: string; regulation: string; status: string; owner: string; due_date: string };
+  workflow: PricingWorkflowStatus;
+}
+
+export interface PricingTransactionDetail {
+  order_header: Record<string, string | number>;
+  pricing_breakdown: { contract_price: number; charged_price: number; overcharge_per_unit: number; credit_memo_amount: number; gpo: string; correct_tier: string; applied_tier: string };
+  what_went_wrong: string;
+  ai_recommendation: { fix: string; confidence: number; source: string };
+  order_trail: { date: string; event: string; price_applied: string; status: string; correction: string }[];
+  mapping_accuracy: { gpo_roster_confidence: number; signal: string; chargeback_exposure: number };
+  customer_hierarchy: { idn: string; hospital: string; clinic: string };
+  cross_team_visibility: { team: string; issue: string; owner: string }[];
+  capa_linkage: { capa_id: string; regulation: string; status: string; owner: string; due_date: string };
+  issue_id: string;
+  action_label: string;
+  workflow: PricingWorkflowStatus;
+}
+
+export interface PricingClosure {
+  resolution_confirmation: { issue: string; resolved_by: string; resolved_by_name: string; date: string; resolution_type: string; exposure_recovered: number };
+  what_was_updated: string[];
+  ai_action_log: { recommendation: string; approved_by: string; confidence: number; logged_on: string };
+  kpi_impact: Record<string, { before: number | string; after: number | string }>;
+  cross_team_notifications: { team: string; owner: string; notification: string }[];
+  issue_id: string;
+  ai_decision?: "approve" | "reject" | null;
+}
+
+export interface VPHeadline {
+  total_open_issues: number;
+  sla_breach_risk: number;
+  escalation_queue: number;
+  team_resolution_rate: number;
+}
+
+export interface VPKpiCard {
+  name: string;
+  value: number;
+  unit: string;
+  description: string;
+  filter_type: string;
+}
+
+export interface VPTeamHealthRow {
+  team: string;
+  status: string;
+  resolution_rate: number;
+  detail?: string;
+}
+
+export interface VPTeamScorecardRow {
+  team: string;
+  open_issues: number;
+  sla_status: string;
+  /** @deprecated Legacy field — use sla_status */
+  sla_breach_risk?: string | number;
+  resolution_rate: number;
+  health_status: string;
+  health_detail?: string;
+}
+
+export interface VPIssueRow {
+  issue_id: string;
+  account_id?: string;
+  account_name: string;
+  order_id?: string;
+  issue_type: string;
+  team?: string;
+  priority: string;
+  dollar_exposure: number;
+  invoice_status?: string;
+  current_owner_id: string;
+  current_owner_name: string;
+  sla_days_remaining: number;
+  sla_health: string;
+  status: string;
+  ai_fix_1?: string;
+  ai_confidence_1?: number;
+  ai_source_1?: string;
+  ai_fix_2?: string;
+  ai_confidence_2?: number;
+  ai_source_2?: string;
+  ai_fix?: string;
+  ai_confidence?: number;
+  ai_source?: string;
+  ai_decision?: "approve" | "reject" | "escalate" | null;
+  secondary_owner_id?: string;
+}
+
+export interface VPDashboard {
+  headline: VPHeadline;
+  kpi_cards: VPKpiCard[];
+  team_health: VPTeamHealthRow[];
+  team_scorecard: VPTeamScorecardRow[];
+  top_alerts: VPIssueRow[];
+  ai_queue: VPIssueRow[];
+  all_open_issues: VPIssueRow[];
+}
+
+export interface VPWorkflowStatus {
+  ai_approved: boolean;
+  ai_decision?: string | null;
+  can_mark_resolved: boolean;
+  resolution_path: string;
+}
+
+export interface VPOwnerBlock {
+  owner_id: string;
+  owner_name: string;
+  team?: string;
+  assigned_on?: string;
+  next_action?: string;
+  sla_remaining?: string;
+  sla_health?: string;
+  live_progress?: string;
+  completion_pct?: number;
+}
+
+export interface VPIssueDetail {
+  issue: Record<string, unknown>;
+  header: Record<string, string | number>;
+  what_happened: string;
+  business_risk: { risk_type: string; status: string; detail: string }[];
+  owner: VPOwnerBlock;
+  secondary_owner?: VPOwnerBlock | null;
+  owners: VPOwnerBlock[];
+  ai_recommendation: {
+    fix: string;
+    confidence: number;
+    source: string;
+    fix_secondary?: string;
+    confidence_secondary?: number;
+    source_secondary?: string;
+    order_id?: string;
+  };
+  ai_recommendations?: { fix: string; fix_type: string; confidence: number; source: string }[];
+  ai_decision?: string | null;
+  prescribed_actions: string[];
+  why_it_happened: string;
+  preventive_actions: string[];
+  root_cause_secondary?: string;
+  capa_linkage: { capa_id: string; capa_ids?: string[]; area: string; status: string; owner: string; due_date: string; regulation?: string };
+  workflow: VPWorkflowStatus;
+  recurrence: {
+    issue_type?: string;
+    count?: number;
+    period?: string;
+    capa_exists?: string;
+    capa_ids?: string[];
+    vp_action_signal?: string;
+  };
+  reassign_options: { id: string; name: string; team: string }[];
+}
+
+export interface VPClosure {
+  issue_id: string;
+  resolution_confirmation: {
+    issue: string;
+    resolved_by: string;
+    date: string;
+    resolution_type: string;
+    exposure_recovered: number;
+  };
+  sla_performance: {
+    owner: string;
+    owner_name: string;
+    resolved_at: string;
+    sla_limit: string;
+    sla_outcome: string;
+    vp_accountability_note: string;
+  }[];
+  recurring_pattern: {
+    issue_type?: string;
+    recurrence_count?: number;
+    period?: string;
+    team?: string;
+    capa_exists?: string;
+    capa_ids?: string[];
+    vp_action_signal?: string;
+  };
+  what_was_updated: string[];
+  next_actions: string[];
+  ai_action_log: { fix: string; approved_by: string; confidence: number; logged_on: string }[];
+  kpi_impact: Record<string, { before?: number | string; after?: number | string; label?: string; unit?: string }>;
+  cross_team_notifications: {
+    team: string;
+    owner?: string;
+    team_status?: string;
+    notified_about?: string;
+    notification?: string;
+  }[];
+  action_taken?: string;
+}
+
+export interface StewardHeadline {
+  total_exposure: number;
+  hierarchy_mismatches: number;
+  orphan_records: number;
+  tax_jurisdiction_gaps: number;
+  annualized_exposure: number;
+}
+export interface StewardDataQualityHealth { metric: string; score: number; status: "Healthy" | "At Risk" | "Critical"; }
+export interface StewardKpiCard { name: string; value: number; unit: "open" | "dollars"; description: string; filter_type: string; }
+export interface StewardIssueRow {
+  issue_id: string; customer_id: string; customer_name: string; issue_type: string; priority: "CRITICAL" | "HIGH" | "MEDIUM" | "LOW";
+  dollar_value: number; hierarchy_level: string; current_idn: string; correct_idn: string; current_idn_name: string; correct_idn_name: string;
+  current_jurisdiction: string; correct_jurisdiction: string; owner_id: string; owner_name: string; sla_days_remaining: number; opened_date: string;
+  status: string; open_orders: string; contract_id: string; ai_fix: string; ai_confidence: number; ai_source: string; capa_id: string; ai_decision?: "approve" | "reject" | null; urgency_label?: string;
+}
+export interface StewardDashboard {
+  headline: StewardHeadline; data_quality_health: StewardDataQualityHealth[]; kpi_cards: StewardKpiCard[]; top_alerts: StewardIssueRow[];
+  ai_queue: StewardIssueRow[]; my_action_queue: StewardIssueRow[]; all_open_issues: StewardIssueRow[];
+}
+export interface StewardWorkflowStatus { ai_approved: boolean; manual_fix_applied: boolean; can_mark_resolved: boolean; resolution_path: string; }
+export interface StewardIssueDetail {
+  issue: StewardIssueRow; header: Record<string, string | number>; what_happened: string;
+  business_risk: { affected_team: string; exposure: string; risk_type: string }[];
+  owner: { owner_id: string; owner_name: string; assigned_on: string; next_action: string; sla_remaining: string };
+  ai_recommendation: { fix: string; confidence: number; source: string; customer_id: string };
+  affected_records: { customer: string; customer_name: string; open_order: string; contract: string; current_idn_parent: string }[];
+  has_open_orders: boolean; prescribed_actions: string[]; why_it_happened: string; preventive_actions: string[];
+  capa_linkage: { capa_id: string; regulation: string; status: string; owner: string; due_date: string }; workflow: StewardWorkflowStatus;
+}
+export interface StewardRecordDetail {
+  record_header: { customer_id: string; customer_name: string; hierarchy_level: string; source_system: string; last_updated: string; status: string };
+  hierarchy_breakdown: { current_idn: string; current_idn_name: string; correct_idn: string; correct_idn_name: string; jurisdiction_applied: string; correct_jurisdiction: string; effective_date: string; downstream_exposure: number };
+  what_went_wrong: string; ai_recommendation: { fix: string; confidence: number; source: string; decision?: "approve" | "reject" | null }; open_orders: string[]; contract_id: string;
+  record_trail: { date: string; event: string; detail: string }[]; source_system_mismatch: { source: string; value: string; confirmed: string; since: string }[];
+  customer_hierarchy: { idn: string; hospital: string; clinic: string }; cross_team_visibility: { team: string; issue: string; exposure: string; owner: string }[];
+  capa_linkage: { capa_id: string; regulation: string; status: string; owner: string; due_date: string }; issue_id: string; workflow: StewardWorkflowStatus;
+}
+export interface StewardClosure {
+  resolution_confirmation: { issue: string; resolved_by: string; resolved_by_name: string; date: string; resolution_type: string; exposure_removed: number };
+  what_was_updated: string[]; ai_action_log: { recommendation: string; approved_by: string; confidence: number; logged_on: string };
+  kpi_impact: Record<string, { before: number | string; after: number | string }>;
+  cross_team_notifications: { team: string; owner?: string; notified_about: string }[];
+  issue_id: string;
+  ai_decision?: "approve" | "reject" | null;
+}
+
+export interface CFOAlert {
+  alert_id: string;
+  account_id: string;
+  account_name: string;
+  customer_name?: string;
+  order_id: string;
+  issue_type: string;
+  priority: string;
+  dollar_exposure: number;
+  margin_at_risk: number;
+  penalty_exposure: number;
+  legal_risk: string;
+  invoice_status: string;
+  pre_invoice: number;
+  sla_days_remaining: number;
+  opened_date: string;
+  status: string;
+  cfo_assignee: string;
+  tax_owner_id?: string;
+  tax_owner_name?: string;
+  tax_owner_team?: string;
+  pricing_owner_id?: string;
+  pricing_owner_name?: string;
+  pricing_owner_team?: string;
+  ai_fix_1?: string;
+  ai_confidence_1?: number;
+  ai_source_1?: string;
+  ai_fix_2?: string;
+  ai_confidence_2?: number;
+  ai_source_2?: string;
+  root_cause_primary?: string;
+  root_cause_secondary?: string;
+  capa_ids?: string;
+  next_action_tax?: string;
+  next_action_pricing?: string;
+  correct_jurisdiction?: string;
+  applied_jurisdiction?: string;
+  list_price?: number;
+  contract_price?: number;
+  ai_decision?: string;
+  ai_recommendation_lines?: string[];
+  ai_fix_display?: string;
+  ai_fix?: string;
+  ai_confidence?: number;
+  ai_source?: string;
+  queue_row_id?: string;
+  queue_persona?: "tax" | "pricing" | "finance" | "steward";
+  applied_tier?: string;
+  correct_tier?: string;
+  current_idn_name?: string;
+}
+
+export type CFOKpiTrendDirection = "improving" | "worsening" | "neutral";
+
+export interface CFOKpiCard {
+  value: number;
+  label: string;
+  description: string;
+  trend_label?: string;
+  direction?: CFOKpiTrendDirection;
+}
+
+export interface CFORiskHeatmapRow {
+  issue_type: string;
+  severity: "Critical" | "Caution" | "Healthy";
+  records_at_risk: number;
+  dollar_exposure: number;
+}
+
+export interface CFOKpiPeriodRow {
+  month: string;
+  revenue_at_risk: number;
+  margin_at_risk: number;
+  compliance_exposure: number;
+}
+
+export interface CCOMonthOnMonthRow {
+  month: string;
+  penalty_exposure: number;
+  open_issues: number;
+  capa_breach_risk: number;
+}
+
+export interface CFODashboard {
+  headline: {
+    total_exposure: number;
+    open_issues: number;
+    pre_invoice_count: number;
+    predicted_annual_exposure: number;
+  };
+  kpi_cards: Record<string, CFOKpiCard>;
+  kpi_period_comparison?: CFOKpiPeriodRow[];
+  risk_heatmap?: CFORiskHeatmapRow[];
+  resolution_trend: Array<{ kpi: string; trend: string; status: string; direction: string }>;
+  top_alerts: CFOAlert[];
+  ai_queue: CFOAlert[];
+  high_value_approval_queue: CFOAlert[];
+  all_open_alerts: CFOAlert[];
+}
+
+export interface CFOClosure {
+  resolution_confirmation: {
+    issue: string;
+    resolved_by: string;
+    date: string;
+    resolution_type: string;
+    exposure_recovered: number;
+  };
+  what_was_updated: string[];
+  ai_action_log: Array<{ fix: string; approved_by: string; confidence: number; logged_on: string }>;
+  kpi_impact: Record<string, { before: number | string; after: number | string; delta?: number; label?: string }>;
+  cross_team_notifications: { team: string; owner?: string; notification: string }[];
+  alert_id: string;
+  account_id?: string;
+  order_id?: string;
+}
+
+export interface CCOIssue {
+  issue_id: string;
+  account_id: string;
+  account_name: string;
+  order_id: string;
+  issue_type: string;
+  priority: string;
+  penalty_exposure: number;
+  capa_breach_risk: number;
+  audit_readiness_impact: number;
+  legal_risk: string;
+  invoice_status: string;
+  pre_invoice: number;
+  sla_days_remaining: number;
+  opened_date: string;
+  status: string;
+  cco_assignee: string;
+  tax_owner_id: string;
+  tax_owner_name: string;
+  tax_owner_team: string;
+  compliance_owner_id: string;
+  compliance_owner_name: string;
+  compliance_owner_team: string;
+  ai_fix_1: string;
+  ai_confidence_1: number;
+  ai_source_1: string;
+  ai_fix_2: string;
+  ai_confidence_2: number;
+  ai_source_2: string;
+  root_cause_primary: string;
+  root_cause_secondary: string;
+  capa_ids: string;
+  next_action_tax: string;
+  next_action_compliance: string;
+  correct_jurisdiction: string;
+  applied_jurisdiction: string;
+  regulation_state: string;
+  regulation_statute: string;
+  regulation_requirement: string;
+  severity_category: string;
+  ai_decision?: string;
+}
+
+export interface CCOHeadline {
+  total_compliance_exposure: number;
+  open_issues: number;
+  pre_invoice: number;
+  annualized_regulatory_risk: number;
+  display_exposure: string;
+  display_annualized: string;
+}
+
+export type CCOKpiKey =
+  | "regulatory_penalty_exposure"
+  | "capa_breach_risk"
+  | "audit_readiness_score"
+  | "predicted_annual_risk";
+
+export interface CCOKpiCard {
+  value: number;
+  label: string;
+  display: string;
+  description: string;
+  unit: "dollars" | "open" | "percent";
+}
+
+export interface CCODashboard {
+  headline: CCOHeadline;
+  kpi_cards: Record<CCOKpiKey, CCOKpiCard>;
+  month_on_month?: CCOMonthOnMonthRow[];
+  policy_violation_tracker: { severity: string; count: number; teams: string }[];
+  compliance_trend: { kpi: string; trend: string; status: string }[];
+  top_alerts: CCOIssue[];
+  capa_status: {
+    capa_id: string;
+    area: string;
+    status: string;
+    owner: string;
+    due_date: string;
+    health: string;
+  }[];
+  upcoming_deadlines: { filing: string; due_date: string; days_remaining: number; status: string }[];
+  ai_queue: CCOIssue[];
+  high_value_approval_queue: CCOIssue[];
+  all_open_issues: CCOIssue[];
+  risk_heatmap?: {
+    issue_id: string;
+    risk_area: string;
+    label: string;
+    severity: "Critical" | "Caution";
+    issues_at_risk: number;
+    penalty_exposure: number;
+    priority: string;
+  }[];
+}
+
+export interface CCOIssueDetail {
+  issue: CCOIssue;
+  header: Record<string, string | number>;
+  what_happened: string;
+  compliance_risk: { risk_type: string; value: string; note: string }[];
+  owners: {
+    owner_id: string;
+    owner_name: string;
+    team: string;
+    assigned_on: string;
+    next_action: string;
+    sla_remaining: string;
+  }[];
+  ai_recommendations: string[];
+  capa_entries: { id: string; area: string; status: string; owner: string; due: string; health: string }[];
+  regulation_references: { state: string; statute: string; requirement: string }[];
+}
+
+export interface CCOClosure {
+  resolution_confirmation: {
+    issue: string;
+    resolved_by: string;
+    date: string;
+    resolution_type: string;
+    exposure_recovered: number;
+  };
+  what_was_updated: string[];
+  ai_action_log: Array<{ fix: string; approved_by: string; confidence: number; logged_on: string }>;
+  kpi_impact: {
+    regulatory_penalty_exposure: { before: number; after: number };
+    capa_breach_risk: { before: number; after: number };
+    audit_readiness_score: { before: number; after: number };
+    predicted_annual_risk: { before: number; after: number };
+  };
+  cross_team_notifications: { team: string; owner: string | null; notification: string }[];
 }
 
 export interface TerritoryAlignment {
@@ -741,6 +1471,203 @@ export const api = {
     return fetchApi<{ prescriptions: unknown[]; total: number; page: number; size: number }>(`/api/rx/prescriptions?${q}`);
   },
   getRxExportViolationsUrl: () => `${API_BASE}/api/rx/export/violations`,
+  getTaxDashboard: () => taxFetch<TaxDashboard>("/api/tax/dashboard"),
+  postTaxAiAction: (payload: { issue_id: string; action: "approve" | "reject" }) =>
+    taxFetch<{ ok: boolean; issue_id: string; dashboard: TaxDashboard }>("/api/tax/ai-action", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+  postTaxResolve: (payload: { issue_id: string }) =>
+    taxFetch<{
+      ok: boolean;
+      issue_id: string;
+      already_resolved: boolean;
+      closure: TaxClosure;
+      dashboard: TaxDashboard;
+    }>("/api/tax/resolve", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+  postTaxIssueAction: (payload: {
+    issue_id: string;
+    action: "acknowledge" | "reassign" | "update_address";
+    owner_id?: string;
+    owner_name?: string;
+  }) =>
+    taxFetch<{
+      ok: boolean;
+      issue_id: string;
+      action: string;
+      message: string;
+      issue: TaxIssueRow;
+      dashboard: TaxDashboard;
+    }>("/api/tax/issue-action", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+  getTaxIssue: (issueId: string) => taxFetch<TaxIssueDetail>(`/api/tax/issue/${issueId}`),
+  getTaxTransaction: (orderId: string) => taxFetch<TaxTransactionDetail>(`/api/tax/transaction/${orderId}`),
+  getTaxClosure: (issueId: string) => taxFetch<TaxClosure>(`/api/tax/closure/${issueId}`),
+  getPricingDashboard: () =>
+    fetchApi<PricingDashboard>("/api/pricing/dashboard", { headers: pricingDemoSessionHeaders() }),
+  getPricingIssue: (issueId: string) =>
+    fetchApi<PricingIssueDetail>(`/api/pricing/issue/${issueId}`, { headers: pricingDemoSessionHeaders() }),
+  getPricingTransaction: (orderId: string) =>
+    fetchApi<PricingTransactionDetail>(`/api/pricing/transaction/${orderId}`, { headers: pricingDemoSessionHeaders() }),
+  getPricingClosure: (issueId: string) =>
+    fetchApi<PricingClosure>(`/api/pricing/closure/${issueId}`, { headers: pricingDemoSessionHeaders() }),
+  pricingAiAction: (issueId: string, action: "approve" | "reject") =>
+    fetchApi<{ issue_id: string; action: string; workflow: PricingWorkflowStatus }>(
+      "/api/pricing/ai-action",
+      { method: "POST", body: JSON.stringify({ issue_id: issueId, action }), headers: pricingDemoSessionHeaders() },
+    ),
+  pricingResolve: (issueId: string) =>
+    fetchApi<{
+      ok: boolean;
+      issue_id: string;
+      already_resolved: boolean;
+      closure: PricingClosure;
+      dashboard: PricingDashboard;
+    }>("/api/pricing/resolve", {
+      method: "POST",
+      body: JSON.stringify({ issue_id: issueId }),
+      headers: pricingDemoSessionHeaders(),
+    }),
+  pricingReassign: (issueId: string, ownerId?: string) =>
+    fetchApi<{ issue_id: string; owner_id: string; owner_name: string }>("/api/pricing/reassign", {
+      method: "POST",
+      body: JSON.stringify({ issue_id: issueId, owner_id: ownerId }),
+      headers: pricingDemoSessionHeaders(),
+    }),
+  pricingCreditMemoQueued: (issueId: string) =>
+    fetchApi<{ issue_id: string; workflow: PricingWorkflowStatus }>("/api/pricing/credit-memo-queued", {
+      method: "POST",
+      body: JSON.stringify({ issue_id: issueId }),
+      headers: pricingDemoSessionHeaders(),
+    }),
+  getVPDashboard: () => vpFetch<VPDashboard>("/api/vp/dashboard"),
+  vpResetDemo: () =>
+    vpFetch<{ ok: boolean; dashboard: VPDashboard }>("/api/vp/reset-demo", { method: "POST" }),
+  getVPIssue: (issueId: string) => vpFetch<VPIssueDetail>(`/api/vp/issue/${issueId}`),
+  getVPClosure: (issueId: string) => vpFetch<VPClosure>(`/api/vp/closure/${issueId}`),
+  getVPTeamMembers: () => vpFetch<{ id: string; name: string; team: string }[]>("/api/vp/team-members"),
+  vpApprove: (issueId: string) =>
+    vpFetch<{ dashboard: VPDashboard; closure: VPClosure }>("/api/vp/approve", {
+      method: "POST",
+      body: JSON.stringify({ issue_id: issueId }),
+    }),
+  vpAiAction: (issueId: string, action: "approve" | "reject") =>
+    vpFetch<{ ok: boolean; issue_id: string; dashboard: VPDashboard }>("/api/vp/ai-action", {
+      method: "POST",
+      body: JSON.stringify({ issue_id: issueId, action }),
+    }),
+  vpReassign: (issueId: string, newOwnerId: string, newOwnerName: string) =>
+    vpFetch<{ dashboard: VPDashboard; closure: VPClosure }>("/api/vp/reassign", {
+      method: "POST",
+      body: JSON.stringify({ issue_id: issueId, new_owner_id: newOwnerId, new_owner_name: newOwnerName }),
+    }),
+  vpEscalate: (issueId: string) =>
+    vpFetch<{ dashboard: VPDashboard; closure: VPClosure }>("/api/vp/escalate", {
+      method: "POST",
+      body: JSON.stringify({ issue_id: issueId }),
+    }),
+  getStewardDashboard: () =>
+    fetchApi<StewardDashboard>("/api/steward/dashboard", { headers: stewardDemoSessionHeaders() }),
+  getStewardIssue: (issueId: string) =>
+    fetchApi<StewardIssueDetail>(`/api/steward/issue/${issueId}`, { headers: stewardDemoSessionHeaders() }),
+  getStewardRecord: (customerId: string) =>
+    fetchApi<StewardRecordDetail>(`/api/steward/record/${customerId}`, { headers: stewardDemoSessionHeaders() }),
+  getStewardClosure: (issueId: string) =>
+    fetchApi<StewardClosure>(`/api/steward/closure/${issueId}`, { headers: stewardDemoSessionHeaders() }),
+  stewardAiAction: (issueId: string, action: "approve" | "reject") =>
+    fetchApi<{ issue_id: string; action: string; workflow: StewardWorkflowStatus; dashboard: StewardDashboard }>(
+      "/api/steward/ai-action",
+      { method: "POST", body: JSON.stringify({ issue_id: issueId, action }), headers: stewardDemoSessionHeaders() },
+    ),
+  stewardResolve: (issueId: string) =>
+    fetchApi<{
+      ok: boolean;
+      issue_id: string;
+      already_resolved: boolean;
+      closure: StewardClosure;
+      dashboard: StewardDashboard;
+    }>("/api/steward/resolve", {
+      method: "POST",
+      body: JSON.stringify({ issue_id: issueId }),
+      headers: stewardDemoSessionHeaders(),
+    }),
+  stewardReassign: (issueId: string, ownerId?: string) =>
+    fetchApi<{ issue_id: string; owner_id: string; owner_name: string }>("/api/steward/reassign", {
+      method: "POST",
+      body: JSON.stringify({ issue_id: issueId, owner_id: ownerId }),
+      headers: stewardDemoSessionHeaders(),
+    }),
+  stewardManualFixApplied: (issueId: string) =>
+    fetchApi<{ issue_id: string; workflow: StewardWorkflowStatus }>("/api/steward/manual-fix-applied", {
+      method: "POST",
+      body: JSON.stringify({ issue_id: issueId }),
+      headers: stewardDemoSessionHeaders(),
+    }),
+  getCFODashboard: () => cfoFetch<CFODashboard>("/api/cfo/dashboard"),
+  getCFOIssueDetail: (alertId: string) =>
+    cfoFetch<{
+      alert: CFOAlert;
+      header: {
+        issue_type: string;
+        customer: string;
+        priority: string;
+        dollar_impact: number;
+        opened_on: string;
+        sla: string;
+        invoice_status?: string;
+        margin_at_risk?: number;
+      };
+      owners: Array<{
+        owner_id: string;
+        owner_name?: string;
+        team?: string;
+        assigned_on?: string;
+        next_action?: string | null;
+      }>;
+      ai_recommendations: string[];
+      capa_entries: Array<{ id: string; area: string; status: string; owner: string; due: string }>;
+      reassign_options: Array<{ id: string; name: string; team: string }>;
+    }>(`/api/cfo/issue/${alertId}`),
+  cfoAiAction: (alertId: string, action: "approve" | "reject") =>
+    cfoFetch<{ ok: boolean; alert_id: string; dashboard: CFODashboard }>("/api/cfo/ai-action", {
+      method: "POST",
+      body: JSON.stringify({ alert_id: alertId, action }),
+    }),
+  getCFOClosure: (alertId: string) => cfoFetch<CFOClosure>(`/api/cfo/closure/${alertId}`),
+  cfoApprove: (alertId: string) =>
+    cfoFetch<{ dashboard: CFODashboard; closure: CFOClosure }>("/api/cfo/approve", {
+      method: "POST",
+      body: JSON.stringify({ alert_id: alertId }),
+    }),
+  cfoReassign: (alertId: string, newOwnerId: string, newOwnerName: string) =>
+    cfoFetch<CFODashboard>("/api/cfo/reassign", {
+      method: "POST",
+      body: JSON.stringify({
+        alert_id: alertId,
+        new_owner_id: newOwnerId,
+        new_owner_name: newOwnerName,
+      }),
+    }),
+  getCCODashboard: () => ccoFetch<CCODashboard>("/api/cco/dashboard"),
+  getCCOIssueDetail: (issueId: string) => ccoFetch<CCOIssueDetail>(`/api/cco/issue/${issueId}`),
+  getCCOClosure: (issueId: string) => ccoFetch<CCOClosure>(`/api/cco/closure/${issueId}`),
+  ccoApprove: (issueId: string) =>
+    ccoFetch<{ dashboard: CCODashboard; closure: CCOClosure }>("/api/cco/approve", {
+      method: "POST",
+      body: JSON.stringify({ issue_id: issueId }),
+    }),
+  ccoReassign: (issueId: string, ownerId: string, ownerName: string) =>
+    ccoFetch<CCODashboard>("/api/cco/reassign", {
+      method: "POST",
+      body: JSON.stringify({ issue_id: issueId, owner_id: ownerId, owner_name: ownerName }),
+    }),
+  getCCOTeamMembers: () =>
+    ccoFetch<{ members: { id: string; name: string; team: string }[] }>("/api/cco/team-members"),
 };
 
 export async function streamAiChat(

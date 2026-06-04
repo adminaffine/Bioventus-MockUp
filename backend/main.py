@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from dotenv import load_dotenv
 
-from routers import quality, integration, compliance, ai_chat, upload, pii, governance, integrity, rx_integrity, capa, products, commercial
+from routers import quality, integration, compliance, ai_chat, upload, pii, governance, integrity, rx_integrity, capa, products, commercial, tax, pricing, steward, cfo, cco, vp
 from services.quality_engine import get_quality_profile
 from services import startup_cache
 
@@ -55,6 +55,12 @@ app.include_router(rx_integrity.router)
 app.include_router(capa.router)
 app.include_router(products.router)
 app.include_router(commercial.router, prefix="/api")
+app.include_router(tax.router)
+app.include_router(pricing.router)
+app.include_router(steward.router)
+app.include_router(cfo.router)
+app.include_router(cco.router)
+app.include_router(vp.router)
 
 
 @app.get("/api/dashboard/summary")

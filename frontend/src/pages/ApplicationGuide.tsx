@@ -257,6 +257,29 @@ function buildActs(metrics: {
       talking:
         "Market Access gets a daily queue sorted by financial risk and time to expiry. The workflow is action-first: verify membership, file disputes, and prevent contract leakage.",
     },
+    {
+      id: 13,
+      title: "VP OPERATIONS COMMAND",
+      time: "4 minutes",
+      screen: "Operations Dashboard (/vp-dashboard)",
+      keyMessages: [
+        "Switch to VP / Director — Operations for cross-team issue oversight",
+        "Baseline: 47 open issues · 9 SLA breach risks · 4 in priority queue · 71% team resolution rate",
+        "Top Alerts shows 8 most urgent issues — VP-ISS-001 Northeast Medical is first (1 day to SLA breach)",
+        "AI Recommendation Queue: 3 high-confidence fixes awaiting VP approval",
+        "Approve → Closure → Return to Dashboard removes the issue for this demo session",
+        "Reset demo data restores the full baseline for the next walk-through",
+      ],
+      clicks: [
+        "Switch role to VP / Director — Operations",
+        "Open Operations Dashboard — note Operations View banner with live KPIs",
+        "Click blinking View Issue → on VP-ISS-001 (Northeast Medical / ORD-031)",
+        "Approve AI recommendation → Closure → Return to Dashboard",
+        "Click Reset demo data to restore 47 open issues and all 8 Top Alerts",
+      ],
+      talking:
+        "The VP persona is the operational command layer across Tax, Pricing, Compliance, and Finance. The dashboard prioritizes by SLA urgency, surfaces AI recommendations for executive approval, and tracks team scorecard performance — without leaving a single operations view.",
+    },
   ];
 }
 

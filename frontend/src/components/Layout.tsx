@@ -34,10 +34,28 @@ import {
 import { cn } from "../lib/utils";
 import { DATE_DISPLAY_FORMAT_OPTIONS, type DateDisplayFormatId } from "../lib/displayDate";
 import { useDateFormat } from "../context/DateFormatContext";
-import { EXECUTIVE_ROLE_IDS, type RoleId, ROLES, useRole } from "../context/RoleContext";
+import { EXECUTIVE_ROLE_IDS, type RoleId, VIEWING_AS_ROLES, useRole } from "../context/RoleContext";
 import { useAlerts } from "../context/AlertContext";
 import { RoleContextBanner } from "./RoleContextBanner";
 import { api, type AlertItem } from "../services/api";
+import {
+  TAX_TEAM_SECTION,
+  canAccessTaxTeamNav,
+  taxTeamNavItems,
+} from "../config/taxTeamNav";
+import {
+  PRICING_TEAM_SECTION,
+  canAccessPricingTeamNav,
+  pricingTeamNavItems,
+} from "../config/pricingTeamNav";
+import {
+  canAccessStewardNav,
+  stewardNavItems,
+  STEWARD_TEAM_SECTION,
+} from "../config/stewardTeamNav";
+import { canAccessCFOTeamNav, cfoTeamNavItems, CFO_TEAM_SECTION } from "../config/cfoTeamNav";
+import { canAccessCCOTeamNav, ccoTeamNavItems, CCO_TEAM_SECTION } from "../config/ccoTeamNav";
+import { canAccessVPTeamNav, vpTeamNavItems, VP_TEAM_SECTION } from "../config/vpTeamNav";
 
 type NavItem = {
   path: string;
@@ -86,42 +104,55 @@ const nav: NavItem[] = [
     path: "/revenue?tab=pricing",
     label: "Pricing Work Queue",
     icon: BriefcaseBusiness,
-    allowedRoles: ["pricing_analyst", "revenue_assurance", "market_access"],
+    allowedRoles: ["pricing_analyst"],
   },
   {
     path: "/revenue?tab=agreement-expiry",
     label: "Agreement Expiry",
     icon: FileClock,
-    allowedRoles: ["market_access", "revenue_assurance", "pricing_analyst"],
+    allowedRoles: ["pricing_analyst"],
   },
   {
     path: "/tax-certificate-monitoring",
     label: "Tax Certificate Monitoring",
     icon: ReceiptText,
-    allowedRoles: ["tax_compliance", "cfo", "credit_ar"],
+    allowedRoles: ["tax_compliance", "cfo"],
   },
   {
     path: "/credit-exposure-queue",
     label: "Credit Exposure Queue",
     icon: BadgeDollarSign,
-    allowedRoles: ["credit_ar", "cfo", "commercial_ops"],
+    allowedRoles: ["cfo"],
   },
   {
     path: "/duplicate-resolution-workbench",
     label: "Duplicate Workbench",
     icon: CopyCheck,
-    allowedRoles: ["commercial_ops", "sales_leadership", "revenue_assurance"],
+    allowedRoles: ["data_steward"],
   },
   {
     path: "/territory-integrity",
     label: "Sales Ops - Territory Integrity",
     icon: Target,
-    allowedRoles: ["sales_leadership", "commercial_ops", "credit_ar"],
+    allowedRoles: ["admin"],
   },
   { path: "/alerts", label: "Alert-to-Action", icon: Zap },
 ];
 
 const applicationGuideItem = { path: "/application-guide", label: "Application Guide", icon: BookOpen };
+
+const DEFAULT_SECTION_OPEN: Record<string, boolean> = {
+  "EXECUTIVE & COMMAND": true,
+  "CORE PLATFORM": true,
+  "REVENUE PROTECTION": true,
+  "RISK & CONTROLS": true,
+  [TAX_TEAM_SECTION]: true,
+  [PRICING_TEAM_SECTION]: true,
+  [VP_TEAM_SECTION]: true,
+  [STEWARD_TEAM_SECTION]: true,
+  "DATA STEWARDSHIP": true,
+  TOOLS: true,
+};
 
 function DateFormatControl({ darkMode }: { darkMode: boolean }) {
   const { formatId, setFormatId } = useDateFormat();
@@ -173,14 +204,7 @@ function Layout({
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [bellDropdownOpen, setBellDropdownOpen] = useState(false);
   const [topAlerts, setTopAlerts] = useState(TOP_5_ALERT_STUBS);
-  const [sectionOpen, setSectionOpen] = useState<Record<string, boolean>>({
-    "EXECUTIVE & COMMAND": true,
-    "CORE PLATFORM": true,
-    "REVENUE PROTECTION": true,
-    "RISK & CONTROLS": true,
-    "DATA STEWARDSHIP": true,
-    TOOLS: true,
-  });
+  const [sectionOpen, setSectionOpen] = useState<Record<string, boolean>>(DEFAULT_SECTION_OPEN);
   const [sidebarWidth, setSidebarWidth] = useState(() => {
     try {
       const stored = Number(localStorage.getItem("layout.sidebar.width"));
@@ -189,6 +213,12 @@ function Layout({
     return 260;
   });
   const sidebarOpen = true;
+  const isPricingPersona = currentRole.id === "pricing_analyst";
+  const isTaxPersona = currentRole.id === "tax_compliance";
+  const isStewardPersona = currentRole.id === "data_steward";
+  const isCfoPersona = currentRole.id === "cfo";
+  const isCcoPersona = currentRole.id === "cco";
+  const isVpPersona = currentRole.id === "vp_director";
   const hasGlobalVisibility = EXECUTIVE_ROLE_IDS.includes(currentRole.id);
   const canAccessNavItem = (item: NavItem) => hasGlobalVisibility || !item.allowedRoles || item.allowedRoles.includes(currentRole.id);
 
@@ -197,6 +227,35 @@ function Layout({
       localStorage.setItem("layout.sidebar.width", String(sidebarWidth));
     } catch {}
   }, [sidebarWidth]);
+
+  /** Tax team persona: collapse all sidebar groups except the four tax workflow pages */
+  useEffect(() => {
+    if (
+      currentRole.id === "tax_compliance" ||
+      currentRole.id === "pricing_analyst" ||
+      currentRole.id === "data_steward" ||
+      currentRole.id === "cfo" ||
+      currentRole.id === "cco" ||
+      currentRole.id === "vp_director"
+    ) {
+      setSectionOpen({
+        "EXECUTIVE & COMMAND": false,
+        "CORE PLATFORM": false,
+        "REVENUE PROTECTION": false,
+        "RISK & CONTROLS": false,
+        "DATA STEWARDSHIP": false,
+        TOOLS: false,
+        [TAX_TEAM_SECTION]: currentRole.id === "tax_compliance",
+        [PRICING_TEAM_SECTION]: currentRole.id === "pricing_analyst",
+        [STEWARD_TEAM_SECTION]: currentRole.id === "data_steward",
+        [CFO_TEAM_SECTION]: currentRole.id === "cfo",
+        [CCO_TEAM_SECTION]: currentRole.id === "cco",
+        [VP_TEAM_SECTION]: currentRole.id === "vp_director",
+      });
+    } else {
+      setSectionOpen(DEFAULT_SECTION_OPEN);
+    }
+  }, [currentRole.id]);
 
   const startSidebarResize = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
@@ -272,7 +331,7 @@ function Layout({
           )}
         </div>
         <nav className="p-2 flex-1 overflow-y-auto">
-          {[
+          {!isPricingPersona && !isTaxPersona && !isStewardPersona && !isCfoPersona && !isCcoPersona && !isVpPersona && [
             { section: "", paths: ["/"] },
             { section: "EXECUTIVE & COMMAND", paths: ["/csuite", "/alerts"] },
             {
@@ -306,7 +365,11 @@ function Layout({
                   </button>
                 </>
               )}
-              {(group.section === "" || sectionOpen[group.section]) &&
+              {((group.section === "" &&
+                currentRole.id !== "tax_compliance" &&
+                currentRole.id !== "cfo" &&
+                currentRole.id !== "cco") ||
+                (group.section !== "" && sectionOpen[group.section])) &&
                 nav
                   .filter((n) => group.paths.includes(n.path))
                   .filter(canAccessNavItem)
@@ -336,18 +399,247 @@ function Layout({
                   })}
             </div>
           ))}
-          <Link
-            to={applicationGuideItem.path}
-            className={cn(
-              "mt-3 flex items-center gap-3 px-3 py-2 rounded-lg transition-colors italic",
-              location.pathname === applicationGuideItem.path
-                ? "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300 border-l-2 border-indigo-500"
-                : "text-indigo-500 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20"
-            )}
-          >
-            <ApplicationGuideIcon className="shrink-0 w-5 h-5" />
-            {sidebarOpen && <span className="truncate">{applicationGuideItem.label}</span>}
-          </Link>
+          {canAccessTaxTeamNav(currentRole.id) && (
+            <div>
+              <hr className="border-slate-200 dark:border-slate-700 my-1" />
+              <button
+                type="button"
+                onClick={() => setSectionOpen((prev) => ({ ...prev, [TAX_TEAM_SECTION]: !prev[TAX_TEAM_SECTION] }))}
+                className="w-full flex items-center justify-between text-xs text-slate-400 px-3 mt-2 mb-1 uppercase tracking-wide"
+              >
+                <span>{TAX_TEAM_SECTION}</span>
+                <ChevronDown
+                  className={cn(
+                    "w-3.5 h-3.5 transition-transform",
+                    sectionOpen[TAX_TEAM_SECTION] ? "rotate-0" : "-rotate-90"
+                  )}
+                />
+              </button>
+              {sectionOpen[TAX_TEAM_SECTION] &&
+                taxTeamNavItems.map((item) => {
+                  const { path, label, icon: Icon } = item;
+                  const active = item.isActive
+                    ? item.isActive({ pathname: location.pathname, search: location.search })
+                    : location.pathname === path;
+                  return (
+                    <Link
+                      key={path}
+                      to={path}
+                      className={cn(
+                        "flex items-center gap-3 pl-5 pr-3 py-2 rounded-lg mb-1 transition-colors text-sm border-l-2 border-transparent",
+                        active
+                          ? "bg-primary text-white dark:bg-primary-light border-l-white"
+                          : darkMode
+                            ? "hover:bg-slate-700 text-slate-300"
+                            : "hover:bg-slate-100 text-slate-600"
+                      )}
+                    >
+                      <Icon className="shrink-0 w-4 h-4" />
+                      {sidebarOpen && <span className="truncate">{label}</span>}
+                    </Link>
+                  );
+                })}
+            </div>
+          )}
+          {canAccessPricingTeamNav(currentRole.id) && (
+            <div>
+              <hr className="border-slate-200 dark:border-slate-700 my-1" />
+              <button
+                type="button"
+                onClick={() => setSectionOpen((prev) => ({ ...prev, [PRICING_TEAM_SECTION]: !prev[PRICING_TEAM_SECTION] }))}
+                className="w-full flex items-center justify-between text-xs text-slate-400 px-3 mt-2 mb-1 uppercase tracking-wide"
+              >
+                <span>{PRICING_TEAM_SECTION}</span>
+                <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", sectionOpen[PRICING_TEAM_SECTION] ? "rotate-0" : "-rotate-90")} />
+              </button>
+              {sectionOpen[PRICING_TEAM_SECTION] &&
+                pricingTeamNavItems.map((item) => {
+                  const { path, label, icon: Icon } = item;
+                  const active = item.isActive
+                    ? item.isActive({ pathname: location.pathname, search: location.search })
+                    : location.pathname === path;
+                  return (
+                    <Link
+                      key={path}
+                      to={path}
+                      className={cn(
+                        "flex items-center gap-3 pl-5 pr-3 py-2 rounded-lg mb-1 transition-colors text-sm border-l-2 border-transparent",
+                        active
+                          ? "bg-primary text-white dark:bg-primary-light border-l-white"
+                          : darkMode
+                            ? "hover:bg-slate-700 text-slate-300"
+                            : "hover:bg-slate-100 text-slate-600"
+                      )}
+                    >
+                      <Icon className="shrink-0 w-4 h-4" />
+                      {sidebarOpen && <span className="truncate">{label}</span>}
+                    </Link>
+                  );
+                })}
+            </div>
+          )}
+          {canAccessVPTeamNav(currentRole.id) && (
+            <div>
+              <hr className="border-slate-200 dark:border-slate-700 my-1" />
+              <button
+                type="button"
+                onClick={() => setSectionOpen((prev) => ({ ...prev, [VP_TEAM_SECTION]: !prev[VP_TEAM_SECTION] }))}
+                className="w-full flex items-center justify-between text-xs text-slate-400 px-3 mt-2 mb-1 uppercase tracking-wide"
+              >
+                <span>{VP_TEAM_SECTION}</span>
+                <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", sectionOpen[VP_TEAM_SECTION] ? "rotate-0" : "-rotate-90")} />
+              </button>
+              {sectionOpen[VP_TEAM_SECTION] &&
+                vpTeamNavItems.map((item) => {
+                  const { path, label, icon: Icon } = item;
+                  const active = item.isActive
+                    ? item.isActive({ pathname: location.pathname, search: location.search })
+                    : location.pathname === path;
+                  return (
+                    <Link
+                      key={path}
+                      to={path}
+                      className={cn(
+                        "flex items-center gap-3 pl-5 pr-3 py-2 rounded-lg mb-1 transition-colors text-sm border-l-2 border-transparent",
+                        active
+                          ? "bg-primary text-white dark:bg-primary-light border-l-white"
+                          : darkMode
+                            ? "hover:bg-slate-700 text-slate-300"
+                            : "hover:bg-slate-100 text-slate-600"
+                      )}
+                    >
+                      <Icon className="shrink-0 w-4 h-4" />
+                      {sidebarOpen && <span className="truncate">{label}</span>}
+                    </Link>
+                  );
+                })}
+            </div>
+          )}
+          {canAccessStewardNav(currentRole.id) && (
+            <div>
+              <hr className="border-slate-200 dark:border-slate-700 my-1" />
+              <button
+                type="button"
+                onClick={() => setSectionOpen((prev) => ({ ...prev, [STEWARD_TEAM_SECTION]: !prev[STEWARD_TEAM_SECTION] }))}
+                className="w-full flex items-center justify-between text-xs text-slate-400 px-3 mt-2 mb-1 uppercase tracking-wide"
+              >
+                <span>{STEWARD_TEAM_SECTION}</span>
+                <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", sectionOpen[STEWARD_TEAM_SECTION] ? "rotate-0" : "-rotate-90")} />
+              </button>
+              {sectionOpen[STEWARD_TEAM_SECTION] &&
+                stewardNavItems.map((item) => {
+                  const { path, label, icon: Icon } = item;
+                  const active = item.isActive
+                    ? item.isActive({ pathname: location.pathname, search: location.search })
+                    : location.pathname === path;
+                  return (
+                    <Link
+                      key={path}
+                      to={path}
+                      className={cn(
+                        "flex items-center gap-3 pl-5 pr-3 py-2 rounded-lg mb-1 transition-colors text-sm border-l-2 border-transparent",
+                        active
+                          ? "bg-primary text-white dark:bg-primary-light border-l-white"
+                          : darkMode
+                            ? "hover:bg-slate-700 text-slate-300"
+                            : "hover:bg-slate-100 text-slate-600"
+                      )}
+                    >
+                      <Icon className="shrink-0 w-4 h-4" />
+                      {sidebarOpen && <span className="truncate">{label}</span>}
+                    </Link>
+                  );
+                })}
+            </div>
+          )}
+          {canAccessCFOTeamNav(currentRole.id) && (
+            <div>
+              <hr className="border-slate-200 dark:border-slate-700 my-1" />
+              <button
+                type="button"
+                onClick={() => setSectionOpen((prev) => ({ ...prev, [CFO_TEAM_SECTION]: !prev[CFO_TEAM_SECTION] }))}
+                className="w-full flex items-center justify-between text-xs text-slate-400 px-3 mt-2 mb-1 uppercase tracking-wide"
+              >
+                <span>{CFO_TEAM_SECTION}</span>
+                <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", sectionOpen[CFO_TEAM_SECTION] ? "rotate-0" : "-rotate-90")} />
+              </button>
+              {sectionOpen[CFO_TEAM_SECTION] &&
+                cfoTeamNavItems.map((item) => {
+                  const { path, label, icon: Icon } = item;
+                  const active = item.isActive
+                    ? item.isActive({ pathname: location.pathname, search: location.search })
+                    : location.pathname === path;
+                  return (
+                    <Link
+                      key={path}
+                      to={path}
+                      className={cn(
+                        "flex items-center gap-3 pl-5 pr-3 py-2 rounded-lg mb-1 transition-colors text-sm border-l-2 border-transparent",
+                        active
+                          ? "bg-primary text-white dark:bg-primary-light border-l-white"
+                          : darkMode
+                            ? "hover:bg-slate-700 text-slate-300"
+                            : "hover:bg-slate-100 text-slate-600"
+                      )}
+                    >
+                      <Icon className="shrink-0 w-4 h-4" />
+                      {sidebarOpen && <span className="truncate">{label}</span>}
+                    </Link>
+                  );
+                })}
+            </div>
+          )}
+          {canAccessCCOTeamNav(currentRole.id) && (
+            <div>
+              <hr className="border-slate-200 dark:border-slate-700 my-1" />
+              <button
+                type="button"
+                onClick={() => setSectionOpen((prev) => ({ ...prev, [CCO_TEAM_SECTION]: !prev[CCO_TEAM_SECTION] }))}
+                className="w-full flex items-center justify-between text-xs text-slate-400 px-3 mt-2 mb-1 uppercase tracking-wide"
+              >
+                <span>{CCO_TEAM_SECTION}</span>
+                <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", sectionOpen[CCO_TEAM_SECTION] ? "rotate-0" : "-rotate-90")} />
+              </button>
+              {sectionOpen[CCO_TEAM_SECTION] &&
+                ccoTeamNavItems.map((item) => {
+                  const { path, label, icon: Icon } = item;
+                  const active = item.isActive
+                    ? item.isActive({ pathname: location.pathname, search: location.search })
+                    : location.pathname === path;
+                  return (
+                    <Link
+                      key={path}
+                      to={path}
+                      className={cn(
+                        "flex items-center gap-3 pl-5 pr-3 py-2 rounded-lg mb-1 transition-colors text-sm border-l-2 border-transparent",
+                        active
+                          ? "bg-primary text-white dark:bg-primary-light border-l-white"
+                          : darkMode
+                            ? "hover:bg-slate-700 text-slate-300"
+                            : "hover:bg-slate-100 text-slate-600"
+                      )}
+                    >
+                      <Icon className="shrink-0 w-4 h-4" />
+                      {sidebarOpen && <span className="truncate">{label}</span>}
+                    </Link>
+                  );
+                })}
+            </div>
+          )}
+          {!isPricingPersona && !isTaxPersona && !isStewardPersona && !isCfoPersona && !isCcoPersona && !isVpPersona && (
+            <Link
+              to={applicationGuideItem.path}
+              className={cn(
+                "mt-3 flex items-center gap-3 px-3 py-2 rounded-lg transition-colors italic",
+                location.pathname === applicationGuideItem.path
+                  ? "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300 border-l-2 border-indigo-500"
+                  : "text-indigo-500 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20"
+              )}
+            >
+              <ApplicationGuideIcon className="shrink-0 w-5 h-5" />
+              {sidebarOpen && <span className="truncate">{applicationGuideItem.label}</span>}
+            </Link>
+          )}
         </nav>
         <span className="text-xs text-slate-400 px-3 pb-2 block">v2.0 · BV Application</span>
         <button
@@ -444,8 +736,8 @@ function Layout({
                 <ChevronDown className="w-4 h-4 text-slate-500" />
               </button>
               {dropdownOpen && (
-                <div className="absolute right-0 top-full mt-1 w-72 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg z-50 py-1">
-                  {ROLES.map((role) => (
+                <div className="absolute right-0 top-full mt-1 w-80 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg z-50 py-1">
+                  {VIEWING_AS_ROLES.map((role) => (
                     <button
                       type="button"
                       key={role.id}
@@ -453,18 +745,23 @@ function Layout({
                         setRole(role.id);
                         setDropdownOpen(false);
                       }}
-                      className={`w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors ${
+                      className={`w-full grid grid-cols-[7rem_minmax(0,1fr)_auto] items-center gap-3 px-4 py-2.5 text-left hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors ${
                         currentRole.id === role.id ? "bg-indigo-50 dark:bg-indigo-900/20" : ""
                       }`}
                     >
-                      <span className={`${role.badgeColor} ${role.badgeTextColor} text-xs px-2 py-0.5 rounded-full font-semibold shrink-0`}>
+                      <span
+                        className={`${role.badgeColor} ${role.badgeTextColor} text-xs px-2 py-0.5 rounded-full font-semibold text-center leading-tight`}
+                      >
                         {role.shortLabel}
                       </span>
-                      <div>
-                        <div className="text-sm font-medium text-slate-800 dark:text-slate-200">{role.label}</div>
-                        <div className="text-xs text-slate-500 dark:text-slate-400">{role.personaName}</div>
+                      <div className="min-w-0 text-sm font-medium text-slate-800 dark:text-slate-200 leading-snug">
+                        {role.label}
                       </div>
-                      {currentRole.id === role.id && <Check className="w-4 h-4 text-indigo-500 ml-auto" />}
+                      {currentRole.id === role.id ? (
+                        <Check className="w-4 h-4 text-indigo-500 shrink-0" aria-hidden />
+                      ) : (
+                        <span className="w-4 shrink-0" aria-hidden />
+                      )}
                     </button>
                   ))}
                 </div>

@@ -256,7 +256,7 @@ export default function HierarchyIntelligence() {
         </div>
       )}
 
-      {currentRole.id === "credit_ar" && (
+      {currentRole.id === "cfo" && (
         <div className="rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50/70 dark:bg-amber-900/10 p-4 space-y-3">
           <h3 className="font-semibold text-slate-900 dark:text-slate-100">Credit & AR Overview — MedStar Alliance (IDN-003)</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">

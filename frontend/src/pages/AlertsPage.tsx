@@ -75,8 +75,8 @@ export default function AlertsPage() {
   useEffect(() => {
     if (currentRole.id === "pricing_analyst") setOwnerFilter("Pricing Analyst");
     else if (currentRole.id === "tax_compliance") setOwnerFilter("Tax & Compliance");
-    else if (currentRole.id === "commercial_ops") setOwnerFilter("Commercial Ops");
-    else if (currentRole.id === "vp_quality") setOwnerFilter("VP Quality");
+    else if (currentRole.id === "data_steward") setOwnerFilter("Data Steward");
+    else if (currentRole.id === "cfo") setOwnerFilter("CFO");
     else setOwnerFilter("all");
   }, [currentRole.id]);
 

@@ -4,7 +4,7 @@ GPC-002,CUST-1026,PRD-001,DUROLANE 3mL,Premier,Tier2,720.0,850.0,130.0,TRUE,2024
 GPC-003,CUST-1005,PRD-005,StimRouter,HealthTrust,Tier1,10800.0,12000.0,1200.0,FALSE,2024-06-01,2026-12-31,248,ACTIVE,ORD-010,TRUE,"Customer charged $12,000, HealthTrust Tier1 contract = $10,800. Overcharge $1,200. MEMBERSHIP UNVERIFIED."
 GPC-004,CUST-1007,PRD-005,StimRouter,HealthTrust,Tier1,10800.0,12000.0,1200.0,FALSE,2024-06-01,2026-12-31,248,ACTIVE,ORD-012,TRUE,"Customer charged $12,000, HealthTrust Tier1 contract = $10,800. Overcharge $1,200. MEMBERSHIP UNVERIFIED."
 GPC-005,CUST-1003,PRD-010,neXus System,Vizient,Tier2,7650.0,8500.0,850.0,TRUE,2023-01-01,2026-12-31,248,ACTIVE,ORD-005,TRUE,"Customer charged $8,500, Vizient Tier2 contract = $7,650. Overcharge $850/unit x2 = $1,700."
-GPC-011,CUST-1027,PRD-006,TalisMann,Premier,Tier1,12000.0,14000.0,0.0,TRUE,2025-05-01,2026-05-26,28,EXPIRING,ORD-029,FALSE,Contract expires in 28 days. Renewal required to maintain Tier1 pricing for TalisMann.
+GPC-011,CUST-4019,PRD-006,TalisMann,Premier,Tier1,12000.0,14000.0,0.0,TRUE,2025-05-01,2026-05-26,28,EXPIRING,ORD-029,FALSE,Contract expires in 28 days. Renewal required to maintain Tier1 pricing for TalisMann.
 GPC-012,CUST-1028,PRD-007,StimTrial,Premier,Tier1,11500.0,13500.0,0.0,TRUE,2025-05-01,2026-05-26,28,EXPIRING,ORD-030,FALSE,Contract expires in 28 days. Renewal required to maintain Tier1 pricing for StimTrial.
 GPC-006,CUST-1002,PRD-002,GELSYN-3 6mL,Premier,Tier2,650.0,720.0,0.0,TRUE,2024-01-01,2027-06-30,428,ACTIVE,ORD-002,FALSE,Compliant. Charged within contracted range.
 GPC-007,CUST-1027,PRD-002,GELSYN-3 6mL,Vizient,Tier2,650.0,720.0,0.0,TRUE,2024-01-01,2027-06-30,428,ACTIVE,ORD-007,FALSE,Compliant.

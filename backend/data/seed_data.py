@@ -33,6 +33,8 @@ def create_tables(conn):
     c.execute("DROP TABLE IF EXISTS gpo_contracts")
     c.execute("DROP TABLE IF EXISTS alerts_queue")
     c.execute("DROP TABLE IF EXISTS tax_exemption_certs")
+    c.execute("DROP TABLE IF EXISTS tax_jurisdiction_issues")
+    c.execute("DROP TABLE IF EXISTS pricing_issues")
     c.execute("DROP TABLE IF EXISTS territory_alignment")
     c.execute("DROP TABLE IF EXISTS chargeback_disputes")
     c.execute("DROP TABLE IF EXISTS sla_tickets")
@@ -85,6 +87,164 @@ def create_tables(conn):
         cert_status TEXT, cert_number TEXT, issuing_state TEXT, expiry_date TEXT,
         days_to_expiry INTEGER, tax_exempt_type TEXT, revenue_at_risk REAL,
         orders_affected TEXT, action_required TEXT)""")
+    c.execute("""CREATE TABLE tax_jurisdiction_issues (
+        issue_id TEXT PRIMARY KEY, order_id TEXT, customer_id TEXT, customer_name TEXT,
+        issue_type TEXT, priority TEXT, dollar_value REAL, invoice_status TEXT,
+        urgency_label TEXT, owner_id TEXT, owner_name TEXT, ai_fix TEXT,
+        ai_confidence REAL, ai_source TEXT, correct_jurisdiction TEXT,
+        applied_jurisdiction TEXT, ship_to_state TEXT, bill_to_state TEXT,
+        product TEXT, sla_days_remaining INTEGER, opened_date TEXT, status TEXT,
+        address_record TEXT, pre_invoice INTEGER, rate_difference REAL,
+        capa_id TEXT, root_cause TEXT, risk_compliance TEXT, risk_penalty TEXT,
+        risk_legal TEXT, risk_jurisdiction TEXT)""")
+    c.execute("""CREATE TABLE pricing_issues (
+        issue_id TEXT PRIMARY KEY, order_id TEXT, customer_id TEXT, customer_name TEXT,
+        issue_type TEXT, priority TEXT, dollar_value REAL, invoice_status TEXT,
+        urgency_label TEXT, owner_id TEXT, owner_name TEXT, ai_fix TEXT,
+        ai_confidence REAL, ai_source TEXT, correct_tier TEXT, applied_tier TEXT,
+        gpo_name TEXT, product TEXT, sla_days_remaining INTEGER, opened_date TEXT, status TEXT,
+        contract_id TEXT, credit_memo_required INTEGER, overcharge_per_unit REAL,
+        quantity_affected INTEGER, capa_id TEXT, root_cause TEXT,
+        risk_revenue TEXT, risk_chargeback TEXT, risk_compliance TEXT, risk_gpo TEXT)""")
+    c.execute("DROP TABLE IF EXISTS data_steward_issues")
+    c.execute("""CREATE TABLE data_steward_issues (
+        issue_id TEXT PRIMARY KEY, customer_id TEXT, customer_name TEXT,
+        issue_type TEXT, priority TEXT, dollar_value REAL,
+        hierarchy_level TEXT, current_idn TEXT, correct_idn TEXT,
+        current_idn_name TEXT, correct_idn_name TEXT,
+        current_jurisdiction TEXT, correct_jurisdiction TEXT,
+        owner_id TEXT, owner_name TEXT, sla_days_remaining INTEGER,
+        opened_date TEXT, status TEXT, open_orders TEXT, contract_id TEXT,
+        ai_fix TEXT, ai_confidence REAL, ai_source TEXT, root_cause TEXT,
+        effective_date TEXT, last_updated TEXT, source_system TEXT,
+        capa_id TEXT, risk_pricing TEXT, risk_tax TEXT,
+        risk_credit TEXT, risk_gpo TEXT, ai_decision TEXT)""")
+    c.execute("DROP TABLE IF EXISTS cfo_alerts")
+    c.execute("""CREATE TABLE cfo_alerts (
+        alert_id TEXT PRIMARY KEY,
+        account_id TEXT,
+        account_name TEXT,
+        order_id TEXT,
+        issue_type TEXT,
+        priority TEXT,
+        dollar_exposure REAL,
+        margin_at_risk REAL,
+        penalty_exposure REAL,
+        legal_risk TEXT,
+        invoice_status TEXT,
+        pre_invoice INTEGER,
+        sla_days_remaining INTEGER,
+        opened_date TEXT,
+        status TEXT,
+        cfo_assignee TEXT,
+        tax_owner_id TEXT,
+        tax_owner_name TEXT,
+        tax_owner_team TEXT,
+        pricing_owner_id TEXT,
+        pricing_owner_name TEXT,
+        pricing_owner_team TEXT,
+        ai_fix_1 TEXT,
+        ai_confidence_1 REAL,
+        ai_source_1 TEXT,
+        ai_fix_2 TEXT,
+        ai_confidence_2 REAL,
+        ai_source_2 TEXT,
+        root_cause_primary TEXT,
+        root_cause_secondary TEXT,
+        capa_ids TEXT,
+        next_action_tax TEXT,
+        next_action_pricing TEXT,
+        correct_jurisdiction TEXT,
+        applied_jurisdiction TEXT,
+        list_price REAL,
+        contract_price REAL
+    )""")
+    c.execute("DROP TABLE IF EXISTS cco_compliance_issues")
+    c.execute("""CREATE TABLE cco_compliance_issues (
+        issue_id TEXT PRIMARY KEY,
+        account_id TEXT,
+        account_name TEXT,
+        order_id TEXT,
+        issue_type TEXT,
+        priority TEXT,
+        penalty_exposure REAL,
+        capa_breach_risk INTEGER,
+        audit_readiness_impact INTEGER,
+        legal_risk TEXT,
+        invoice_status TEXT,
+        pre_invoice INTEGER,
+        sla_days_remaining INTEGER,
+        opened_date TEXT,
+        status TEXT,
+        cco_assignee TEXT,
+        tax_owner_id TEXT,
+        tax_owner_name TEXT,
+        tax_owner_team TEXT,
+        compliance_owner_id TEXT,
+        compliance_owner_name TEXT,
+        compliance_owner_team TEXT,
+        ai_fix_1 TEXT,
+        ai_confidence_1 REAL,
+        ai_source_1 TEXT,
+        ai_fix_2 TEXT,
+        ai_confidence_2 REAL,
+        ai_source_2 TEXT,
+        root_cause_primary TEXT,
+        root_cause_secondary TEXT,
+        capa_ids TEXT,
+        next_action_tax TEXT,
+        next_action_compliance TEXT,
+        correct_jurisdiction TEXT,
+        applied_jurisdiction TEXT,
+        regulation_state TEXT,
+        regulation_statute TEXT,
+        regulation_requirement TEXT,
+        severity_category TEXT
+    )""")
+    c.execute("DROP TABLE IF EXISTS vp_alerts")
+    c.execute("""CREATE TABLE vp_alerts (
+        issue_id              TEXT PRIMARY KEY,
+        account_id            TEXT,
+        account_name          TEXT,
+        order_id              TEXT,
+        issue_type            TEXT,
+        team                  TEXT,
+        priority              TEXT,
+        dollar_exposure       REAL,
+        margin_at_risk        REAL,
+        penalty_exposure      REAL,
+        invoice_status        TEXT,
+        pre_invoice           INTEGER,
+        sla_days_remaining    INTEGER,
+        opened_date           TEXT,
+        status                TEXT DEFAULT 'Open',
+        current_owner_id      TEXT,
+        current_owner_name    TEXT,
+        current_owner_team    TEXT,
+        secondary_owner_id    TEXT,
+        secondary_owner_name  TEXT,
+        secondary_owner_team  TEXT,
+        sla_health            TEXT,
+        live_progress_primary TEXT,
+        live_progress_secondary TEXT,
+        completion_primary    INTEGER,
+        completion_secondary  INTEGER,
+        ai_fix_1              TEXT,
+        ai_confidence_1       REAL,
+        ai_source_1           TEXT,
+        ai_fix_2              TEXT,
+        ai_confidence_2       REAL,
+        ai_source_2           TEXT,
+        root_cause_primary    TEXT,
+        root_cause_secondary  TEXT,
+        capa_ids              TEXT,
+        next_action_primary   TEXT,
+        next_action_secondary TEXT,
+        recurrence_count      INTEGER,
+        recurrence_period     TEXT,
+        capa_exists           TEXT,
+        vp_action_signal      TEXT
+    )""")
     c.execute("""CREATE TABLE territory_alignment (
         alignment_id TEXT PRIMARY KEY, order_id TEXT, customer_id TEXT, customer_name TEXT,
         sales_rep_id TEXT, rep_name TEXT, rep_assigned_territory TEXT, order_region TEXT,
@@ -170,6 +330,277 @@ def seed_commercial_tables(conn):
             "days_to_expiry", "tax_exempt_type", "revenue_at_risk",
             "orders_affected", "action_required",
         ],
+    )
+    _load_csv_table(
+        conn,
+        "tax_jurisdiction_issues",
+        [
+            "issue_id", "order_id", "customer_id", "customer_name", "issue_type", "priority",
+            "dollar_value", "invoice_status", "urgency_label", "owner_id", "owner_name", "ai_fix",
+            "ai_confidence", "ai_source", "correct_jurisdiction", "applied_jurisdiction",
+            "ship_to_state", "bill_to_state", "product", "sla_days_remaining", "opened_date",
+            "status", "address_record", "pre_invoice", "rate_difference", "capa_id", "root_cause",
+            "risk_compliance", "risk_penalty", "risk_legal", "risk_jurisdiction",
+        ],
+    )
+    _load_csv_table(
+        conn,
+        "pricing_issues",
+        [
+            "issue_id", "order_id", "customer_id", "customer_name", "issue_type", "priority",
+            "dollar_value", "invoice_status", "urgency_label", "owner_id", "owner_name", "ai_fix",
+            "ai_confidence", "ai_source", "correct_tier", "applied_tier", "gpo_name", "product",
+            "sla_days_remaining", "opened_date", "status", "contract_id", "credit_memo_required",
+            "overcharge_per_unit", "quantity_affected", "capa_id", "root_cause", "risk_revenue",
+            "risk_chargeback", "risk_compliance", "risk_gpo",
+        ],
+    )
+    def _parse_cfo_narrative_tail(parts: list[str]) -> list[str]:
+        def _is_num(value: str) -> bool:
+            try:
+                float(value)
+                return True
+            except ValueError:
+                return False
+
+        if not parts:
+            return [""] * 8
+        num_idxs = [i for i, p in enumerate(parts) if _is_num(p)]
+        if len(num_idxs) >= 2:
+            c1, c2 = num_idxs[0], num_idxs[1]
+            ai_fix_1 = ",".join(parts[:c1])
+            ai_source_1 = parts[c1 + 1] if c1 + 1 < c2 else ""
+            ai_fix_2 = ",".join(parts[c1 + 2 : c2]) if c2 > c1 + 2 else ""
+            ai_source_2 = parts[c2 + 1] if c2 + 1 < len(parts) else ""
+            roots = ",".join(parts[c2 + 2 :]) if c2 + 2 < len(parts) else ""
+            return [ai_fix_1, parts[c1], ai_source_1, ai_fix_2, parts[c2], ai_source_2, roots, ""]
+        if len(num_idxs) == 1:
+            c1 = num_idxs[0]
+            ai_fix_1 = ",".join(parts[:c1])
+            rest = parts[c1 + 1 :]
+            ai_source_1 = rest[0] if rest else ""
+            root_primary = ",".join(rest[1:]) if len(rest) > 1 else ""
+            return [ai_fix_1, parts[c1], ai_source_1, "", "0.0", "", root_primary, ""]
+        merged = ",".join(parts)
+        return [merged, "0.0", "", "", "0.0", "", "", ""]
+
+    def _normalize_cfo_csv_row(fields: list[str]) -> list[str]:
+        """Merge overflow columns caused by unquoted commas in narrative fields."""
+        if len(fields) <= 37:
+            return (fields + [""] * 37)[:37]
+        row = list(fields)
+        contract_price = row.pop()
+        list_price = row.pop()
+        applied_jurisdiction = row.pop()
+        correct_jurisdiction = row.pop()
+        next_action_pricing = row.pop()
+        next_action_tax = row.pop()
+        capa_ids = row.pop()
+        head = row[:22]
+        tail_text = _parse_cfo_narrative_tail(row[22:])
+        return head + tail_text + [
+            capa_ids,
+            next_action_tax,
+            next_action_pricing,
+            correct_jurisdiction,
+            applied_jurisdiction,
+            list_price,
+            contract_price,
+        ]
+
+    with open(CSV_DIR / "cfo_alerts.csv", newline="", encoding="utf-8") as f:
+        reader = csv.reader(f)
+        header = next(reader)
+        cfo_rows = [_normalize_cfo_csv_row(row) for row in reader if row]
+    conn.executemany(
+        "INSERT INTO cfo_alerts VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+        [
+            (
+                r[0],
+                r[1],
+                r[2],
+                r[3],
+                r[4],
+                r[5],
+                float(r[6]),
+                float(r[7]),
+                float(r[8]),
+                r[9],
+                r[10],
+                int(r[11]),
+                int(r[12]),
+                r[13],
+                r[14],
+                r[15],
+                r[16],
+                r[17],
+                r[18],
+                r[19],
+                r[20],
+                r[21],
+                r[22],
+                float(r[23]),
+                r[24],
+                r[25],
+                float(r[26]),
+                r[27],
+                r[28],
+                r[29],
+                r[30],
+                r[31],
+                r[32],
+                r[33],
+                r[34],
+                float(r[35] or 0),
+                float(r[36] or 0),
+            )
+            for r in cfo_rows
+        ],
+    )
+    with open(CSV_DIR / "cco_compliance_issues.csv", newline="", encoding="utf-8") as f:
+        reader = csv.reader(f)
+        next(reader)
+        cco_rows = [row for row in reader if row]
+    conn.executemany(
+        "INSERT OR IGNORE INTO cco_compliance_issues VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+        [
+            (
+                r[0],
+                r[1],
+                r[2],
+                r[3],
+                r[4],
+                r[5],
+                float(r[6]),
+                int(r[7]),
+                int(r[8]),
+                r[9],
+                r[10],
+                int(r[11]),
+                int(r[12]),
+                r[13],
+                r[14],
+                r[15],
+                r[16],
+                r[17],
+                r[18],
+                r[19],
+                r[20],
+                r[21],
+                r[22],
+                float(r[23]),
+                r[24],
+                r[25],
+                float(r[26]) if r[26] else 0.0,
+                r[27],
+                r[28],
+                r[29],
+                r[30],
+                r[31],
+                r[32],
+                r[33],
+                r[34],
+                r[35],
+                r[36],
+                r[37],
+                r[38],
+            )
+            for r in cco_rows
+        ],
+    )
+    _vp_csv = CSV_DIR / "vp_alerts.csv"
+    if _vp_csv.exists():
+        with open(_vp_csv, newline="", encoding="utf-8") as f:
+            _vp_reader = csv.DictReader(f)
+            for _vp_row in _vp_reader:
+                conn.execute(
+                    """
+                    INSERT OR REPLACE INTO vp_alerts VALUES (
+                        :issue_id,:account_id,:account_name,:order_id,:issue_type,:team,
+                        :priority,:dollar_exposure,:margin_at_risk,:penalty_exposure,
+                        :invoice_status,:pre_invoice,:sla_days_remaining,:opened_date,:status,
+                        :current_owner_id,:current_owner_name,:current_owner_team,
+                        :secondary_owner_id,:secondary_owner_name,:secondary_owner_team,
+                        :sla_health,:live_progress_primary,:live_progress_secondary,
+                        :completion_primary,:completion_secondary,
+                        :ai_fix_1,:ai_confidence_1,:ai_source_1,
+                        :ai_fix_2,:ai_confidence_2,:ai_source_2,
+                        :root_cause_primary,:root_cause_secondary,:capa_ids,
+                        :next_action_primary,:next_action_secondary,
+                        :recurrence_count,:recurrence_period,:capa_exists,:vp_action_signal
+                    )
+                    """,
+                    _vp_row,
+                )
+    with open(CSV_DIR / "data_steward_issues.csv", newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        rows = list(reader)
+    conn.executemany(
+        "INSERT INTO data_steward_issues VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+        [
+            (
+                r["issue_id"], r["customer_id"], r["customer_name"],
+                r["issue_type"], r["priority"], float(r["dollar_value"]),
+                r["hierarchy_level"], r["current_idn"], r["correct_idn"],
+                r["current_idn_name"], r["correct_idn_name"],
+                r["current_jurisdiction"], r["correct_jurisdiction"],
+                r["owner_id"], r["owner_name"],
+                int(r["sla_days_remaining"]) if r["sla_days_remaining"] else 0,
+                r["opened_date"], r["status"], r["open_orders"], r["contract_id"],
+                r["ai_fix"], float(r["ai_confidence"]), r["ai_source"],
+                r["root_cause"], r["effective_date"], r["last_updated"],
+                r["source_system"], r["capa_id"], r["risk_pricing"],
+                r["risk_tax"], r["risk_credit"], r["risk_gpo"],
+                r.get("ai_decision", ""),
+            )
+            for r in rows
+        ],
+    )
+
+
+def seed_tax_workflow_customers(conn):
+    """Tax persona demo customers (ship-to vs bill-to jurisdiction mismatches)."""
+    rows = [
+        ("CUST-0892", "Central", "Hospital", "contact892@bioventus-demo.com", "(602) 500-0892", "1975-01-01", "88 South Ave", "Phoenix", "AZ", "85001", "USA", "Health System", "Active", None, None, None, None, None, None, None, None, None, None),
+        ("CUST-1087", "Riverside", "Clinic", "contact1087@bioventus-demo.com", "(602) 501-1087", "1976-01-01", "200 River Rd", "Phoenix", "AZ", "85002", "USA", "Spine Center", "Active", None, None, None, None, None, None, None, None, None, None),
+        ("CUST-2011", "Northeast", "Medical", "contact2011@bioventus-demo.com", "(704) 502-2011", "1977-01-01", "450 NE Blvd", "Charlotte", "NC", "28201", "USA", "Health System", "Active", None, None, None, None, None, None, None, None, None, None),
+        ("CUST-3042", "Valley", "Health", "contact3042@bioventus-demo.com", "(614) 503-3042", "1978-01-01", "30 Valley Dr", "Columbus", "OH", "43001", "USA", "Health System", "Active", None, None, None, None, None, None, None, None, None, None),
+    ]
+    conn.executemany(
+        "INSERT INTO customer_master VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+        rows,
+    )
+
+
+def patch_tax_workflow_sales_orders(conn):
+    """Replace demo orders used by the Tax Team persona workflow."""
+    updates = [
+        ("ORD-011", "CUST-0892", "PRD-001", "Exogen", "2026-01-15", "2026-01-20", 2, 1820.0, 3640.0, "REP-05", "Southeast", "Credit", "Yes", "Central Hospital, 88 South Ave, Phoenix, AZ 85001", "David Marsh", "4421", "dmarsh@central.org", "55-1234567"),
+        ("ORD-015", "CUST-1087", "PRD-002", "Exogen", "2026-02-01", "2026-02-06", 2, 2160.0, 4320.0, "REP-03", "Southeast", "Credit", "Yes", "Riverside Clinic, 200 River Rd, Phoenix, AZ 85002", "Karen Fields", "3317", "kfields@riverside.org", "55-2345678"),
+        ("ORD-018", "CUST-2011", "PRD-001", "Exogen", "2026-04-01", None, 2, 4120.0, 8240.0, "REP-02", "Southeast", "Credit", "No", "Northeast Medical, 450 NE Blvd, Phoenix, AZ 85001", "James Liu", "7782", "jliu@nemedical.org", "55-3456789"),
+        ("ORD-019", "CUST-3042", "PRD-002", "Exogen", "2026-04-03", None, 2, 3090.0, 6180.0, "REP-04", "Southeast", "Credit", "No", "Valley Health, 30 Valley Dr, Phoenix, AZ 85001", "Sara Patel", "5591", "spatel@valleyhealth.org", "55-4567890"),
+        ("ORD-022", "CUST-2011", "PRD-003", "Exogen", "2026-04-05", None, 4, 2060.0, 8240.0, "REP-02", "Southeast", "Credit", "No", "Northeast Medical, 450 NE Blvd, Phoenix, AZ 85001", "James Liu", "7782", "jliu@nemedical.org", "55-3456789"),
+        ("ORD-033", "CUST-0892", "PRD-001", "Exogen", "2026-04-02", None, 1, 3300.0, 3300.0, "REP-05", "Southeast", "Credit", "No", "Central Hospital, 88 South Ave, Phoenix, AZ 85001", "David Marsh", "4421", "dmarsh@central.org", "55-1234567"),
+        ("ORD-034", "CUST-1087", "PRD-002", "Exogen", "2026-04-01", None, 1, 3300.0, 3300.0, "REP-03", "Southeast", "Credit", "No", "Riverside Clinic, 200 River Rd, Phoenix, AZ 85002", "Karen Fields", "3317", "kfields@riverside.org", "55-2345678"),
+    ]
+    for row in updates:
+        conn.execute(
+            """UPDATE sales_orders SET
+                customer_id=?, product_id=?, product_name=?, order_date=?, ship_date=?,
+                quantity=?, unit_price=?, total_amount=?, sales_rep_id=?, region=?,
+                payment_method=?, revenue_recognized=?, billing_address=?, cardholder_name=?,
+                card_last_four=?, billing_email=?, tax_id=?
+            WHERE order_id=?""",
+            (*row[1:], row[0]),
+        )
+    inserts = [
+        ("ORD-035", "CUST-3042", "PRD-002", "Exogen", "2026-03-18", "2026-03-22", 1, 3300.0, 3300.0, "REP-04", "Southeast", "Credit", "Yes", "Valley Health, 30 Valley Dr, Phoenix, AZ 85001", "Sara Patel", "5591", "spatel@valleyhealth.org", "55-4567890"),
+        ("ORD-036", "CUST-2011", "PRD-001", "Exogen", "2026-03-10", "2026-03-14", 1, 3300.0, 3300.0, "REP-02", "Southeast", "Credit", "Yes", "Northeast Medical, 450 NE Blvd, Phoenix, AZ 85001", "James Liu", "7782", "jliu@nemedical.org", "55-3456789"),
+        ("ORD-037", "CUST-0892", "PRD-003", "Exogen", "2026-03-15", "2026-03-19", 1, 2160.0, 2160.0, "REP-05", "Southeast", "Credit", "Yes", "Central Hospital, 88 South Ave, Phoenix, AZ 85001", "David Marsh", "4421", "dmarsh@central.org", "55-1234567"),
+    ]
+    conn.executemany(
+        """INSERT INTO sales_orders VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+        inserts,
     )
 
 
@@ -434,6 +865,9 @@ def export_to_csv(conn):
         "gpo_contracts",
         "alerts_queue",
         "tax_exemption_certs",
+        "tax_jurisdiction_issues",
+        "pricing_issues",
+        "data_steward_issues",
         "territory_alignment",
         "chargeback_disputes",
         "sla_tickets",
@@ -458,6 +892,8 @@ def main():
         seed_patient_support(conn)
         seed_master_conflicts(conn)
         seed_commercial_tables(conn)
+        seed_tax_workflow_customers(conn)
+        patch_tax_workflow_sales_orders(conn)
         seed_territory_alignment(conn)
         seed_chargeback_disputes(conn)
         seed_sla_tickets(conn)
