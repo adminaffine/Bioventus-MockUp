@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { api, type StewardRecordDetail } from "../../services/api";
 import { pricingStickyBtnPrimary } from "../../components/pricing/pricingStickyButtonStyles";
 import StewardAiRecommendationPanel from "../../components/steward/StewardAiRecommendationPanel";
+import { StewardViewModals } from "../../components/steward/StewardViewModals";
 import { useStewardWorkflow } from "../../context/StewardWorkflowContext";
 import { stewardCtaPulseClass } from "../../utils/stewardWorkflowStorage";
 
@@ -15,6 +16,8 @@ export default function StewardRecordDeepDive() {
   const [data, setData] = useState<StewardRecordDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
+  const [contractModalOpen, setContractModalOpen] = useState(false);
+  const [complianceModalOpen, setComplianceModalOpen] = useState(false);
 
   const loadRecord = () => {
     if (!customerId) return;
@@ -115,12 +118,11 @@ export default function StewardRecordDeepDive() {
         >
           Request Record Correction
         </button>
-        <button
-          type="button"
-          onClick={() => navigate("/hierarchy")}
-          className={pricingStickyBtnPrimary}
-        >
-          View Hierarchy
+        <button type="button" onClick={() => setContractModalOpen(true)} className={pricingStickyBtnPrimary}>
+          View Contract
+        </button>
+        <button type="button" onClick={() => setComplianceModalOpen(true)} className={pricingStickyBtnPrimary}>
+          View Compliance Record
         </button>
         <button
           type="button"
@@ -135,6 +137,22 @@ export default function StewardRecordDeepDive() {
           View Customer
         </button>
       </div>
+
+      <StewardViewModals
+        contractOpen={contractModalOpen}
+        complianceOpen={complianceModalOpen}
+        onCloseContract={() => setContractModalOpen(false)}
+        onCloseCompliance={() => setComplianceModalOpen(false)}
+        contract={{
+          contractId: data.contract_id,
+          customerId: data.record_header.customer_id,
+          customerName: data.record_header.customer_name,
+          currentIdn: `${data.hierarchy_breakdown.current_idn || "—"} ${data.hierarchy_breakdown.current_idn_name || ""}`.trim(),
+          correctIdn: `${data.hierarchy_breakdown.correct_idn || "—"} ${data.hierarchy_breakdown.correct_idn_name || ""}`.trim(),
+          openOrders: data.open_orders.join("; ") || "—",
+        }}
+        capaLinkage={data.capa_linkage}
+      />
     </div>
   );
 }

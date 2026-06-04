@@ -1,11 +1,13 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import type { PricingIssueRow } from "../services/api";
 import { api, type PricingClosure, type PricingDashboard } from "../services/api";
 import { EXECUTIVE_APPROVAL_PRICING_ISSUE_ID } from "../utils/executiveApprovalRecord";
 import {
   markHighValueRecordApproved,
   subscribeHighValueApproved,
 } from "../utils/highValueRecordSync";
-import { syncPricingDashboardKpis } from "../utils/pricingDashboard";
+import { patchPricingClosureKpiForExecutiveApproval } from "../utils/executiveClosureKpiPatch";
+import { findPricingIssueRow, syncPricingDashboardKpis } from "../utils/pricingDashboard";
 
 function normalizePricingDashboard(dashboard: PricingDashboard): PricingDashboard {
   return syncPricingDashboardKpis(dashboard);
@@ -34,6 +36,11 @@ export function PricingWorkflowProvider({ children }: { children: ReactNode }) {
   const [dashboardRevision, setDashboardRevision] = useState(0);
   const [loading, setLoading] = useState(true);
   const [aiActionPendingId, setAiActionPendingId] = useState<string | null>(null);
+  const dashboardRef = useRef<PricingDashboard | null>(null);
+
+  useEffect(() => {
+    dashboardRef.current = dashboard;
+  }, [dashboard]);
 
   const applyDashboard = useCallback((data: PricingDashboard) => {
     setDashboard(normalizePricingDashboard(data));
@@ -58,8 +65,9 @@ export function PricingWorkflowProvider({ children }: { children: ReactNode }) {
     return subscribeHighValueApproved(() => {
       setDashboard((prev) => (prev ? normalizePricingDashboard(prev) : prev));
       setDashboardRevision((n) => n + 1);
+      void refreshDashboard({ silent: true });
     });
-  }, []);
+  }, [refreshDashboard]);
 
   const applyAiAction = useCallback(async (issueId: string, action: "approve" | "reject") => {
     setAiActionPendingId(issueId);
@@ -82,10 +90,27 @@ export function PricingWorkflowProvider({ children }: { children: ReactNode }) {
       setDashboard((prev) => (prev ? normalizePricingDashboard(prev) : prev));
       setDashboardRevision((n) => n + 1);
     }
+    const preResolve = dashboardRef.current;
+    let resolvedIssue: PricingIssueRow | undefined = preResolve
+      ? findPricingIssueRow(normalizePricingDashboard(preResolve), issueId)
+      : undefined;
+    if (!resolvedIssue) {
+      try {
+        const detail = await api.getPricingIssue(issueId);
+        resolvedIssue = detail.issue;
+      } catch {
+        resolvedIssue = undefined;
+      }
+    }
     const result = await api.pricingResolve(issueId);
+    const postResolve = normalizePricingDashboard(result.dashboard);
     applyDashboard(result.dashboard);
-    setLoading(false);
-    return result.closure;
+    return patchPricingClosureKpiForExecutiveApproval(
+      result.closure,
+      issueId,
+      postResolve,
+      resolvedIssue,
+    );
   }, [applyDashboard]);
 
   const pricingReassign = useCallback(async (issueId: string, ownerId: string) => {

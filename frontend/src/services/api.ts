@@ -213,6 +213,8 @@ export interface TaxDashboard {
   kpi_cards: TaxKpiCard[];
   top_alerts: TaxIssueRow[];
   all_open_issues: TaxIssueRow[];
+  /** Tax Underpayments KPI drill-down — descending by dollar_value (highest first). */
+  tax_underpayment_issues?: TaxIssueRow[];
   ai_queue: TaxIssueRow[];
   my_action_queue: TaxIssueRow[];
 }

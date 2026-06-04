@@ -75,6 +75,26 @@ def _connect():
     return conn
 
 
+_STEWARD_OWNER_IDS = {o["owner_id"] for o in STEWARD_TEAM_OWNERS}
+
+
+def _is_unassigned_owner_value(value: object) -> bool:
+    text = str(value or "").strip().lower()
+    return not text or text in ("unassigned", "none", "null", "-", "—")
+
+
+def _ensure_steward_owner(issue: dict) -> dict:
+    """Every steward issue is owned by a data steward team member (never Unassigned)."""
+    owner_id = str(issue.get("owner_id") or "").strip()
+    owner_name = str(issue.get("owner_name") or "").strip()
+    if owner_id in _STEWARD_OWNER_IDS and not _is_unassigned_owner_value(owner_id) and not _is_unassigned_owner_value(owner_name):
+        owner = next(o for o in STEWARD_TEAM_OWNERS if o["owner_id"] == owner_id)
+        return {**issue, "owner_id": owner["owner_id"], "owner_name": owner["owner_name"]}
+    idx = sum(ord(c) for c in str(issue.get("issue_id") or "")) % len(STEWARD_TEAM_OWNERS)
+    owner = STEWARD_TEAM_OWNERS[idx]
+    return {**issue, "owner_id": owner["owner_id"], "owner_name": owner["owner_name"]}
+
+
 def _merge_issue(issue: dict, session_id: str) -> dict:
     merged = dict(issue)
     if issue["issue_id"] in DEMO_VALUE_BY_ISSUE:
@@ -84,7 +104,7 @@ def _merge_issue(issue: dict, session_id: str) -> dict:
     override = _session_overrides(session_id).get(issue["issue_id"])
     if override:
         merged.update(override)
-    return merged
+    return _ensure_steward_owner(merged)
 
 
 def _load_issues(session_id: str) -> list[dict]:
@@ -92,7 +112,18 @@ def _load_issues(session_id: str) -> list[dict]:
         rows = conn.execute(
             "SELECT * FROM data_steward_issues ORDER BY sla_days_remaining ASC"
         ).fetchall()
-    return [_merge_issue(dict(r), session_id) for r in rows]
+        issues: list[dict] = []
+        for row in rows:
+            raw = dict(row)
+            merged = _merge_issue(raw, session_id)
+            if merged["owner_id"] != raw.get("owner_id") or merged["owner_name"] != raw.get("owner_name"):
+                conn.execute(
+                    "UPDATE data_steward_issues SET owner_id = ?, owner_name = ? WHERE issue_id = ?",
+                    (merged["owner_id"], merged["owner_name"], merged["issue_id"]),
+                )
+            issues.append(merged)
+        conn.commit()
+    return issues
 
 
 def _can_mark_resolved(issue: dict) -> bool:
@@ -540,7 +571,7 @@ def steward_record(customer_id: str, session_id: str = Depends(get_steward_demo_
         "cross_team_visibility": [
             {"team": "Pricing Team", "issue": "Contract tier mismatch", "exposure": primary["risk_pricing"], "owner": "Olivia Bennett"},
             {"team": "Tax & Compliance", "issue": "Wrong jurisdiction applied", "exposure": primary["risk_tax"], "owner": "Sophia Reed"},
-            {"team": "Credit & AR", "issue": "Credit limit mismatch", "exposure": primary["risk_credit"], "owner": "Ethan Walker"},
+            {"team": "Credit & AR", "issue": "Credit limit mismatch", "exposure": "Credit limit is ok", "owner": "Ethan Walker"},
             {"team": "SAP Team", "issue": "Request for SAP Customer Master data to be updated", "exposure": "System integrity", "owner": "Marcus Hale"},
         ],
         "capa_linkage": _build_capa_linkage(primary),

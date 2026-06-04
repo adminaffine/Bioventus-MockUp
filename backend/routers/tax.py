@@ -76,6 +76,15 @@ def _is_underpayment(issue: dict) -> bool:
     return float(issue.get("rate_difference", 0)) > 0
 
 
+def _underpayment_issues_desc(open_issues: list[dict]) -> list[dict]:
+    """Open underpayment rows for KPI drill-down, highest dollar exposure first."""
+    return sorted(
+        [i for i in open_issues if _is_underpayment(i)],
+        key=lambda x: float(x.get("dollar_value") or 0),
+        reverse=True,
+    )
+
+
 def _manual_workflow_ready(issue: dict) -> bool:
     """Manual 4-step path: Issue (acknowledge) → Transaction (review + address update)."""
     return bool(issue.get("acknowledged_at")) and bool(issue.get("transaction_reviewed_at")) and bool(
@@ -385,6 +394,7 @@ def _build_dashboard_payload(session_id: str) -> dict:
         ],
         "top_alerts": sorted_alerts,
         "all_open_issues": open_issues,
+        "tax_underpayment_issues": _underpayment_issues_desc(open_issues),
         "ai_queue": ai_queue,
         "my_action_queue": my_queue,
     }

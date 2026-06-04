@@ -1,5 +1,6 @@
 import type { VPDashboard, VPHeadline, VPIssueRow, VPKpiCard, VPTeamHealthRow, VPTeamScorecardRow } from "../services/api";
 import { VP_DEMO_BASELINE, VP_TEAM_SCORECARD_BASELINE } from "../config/vpDemoBaseline";
+import { sortByDollarDesc } from "./personaKpiSort";
 import { getVpClosedIssueIds, isVpIssueResolved, VP_TOP_ALERTS_LIMIT } from "./vpWorkflowStorage";
 
 export function formatVPMoney(value: number): string {
@@ -215,7 +216,7 @@ export function filterOpenVPDashboard(dashboard: VPDashboard, closedIds?: Readon
   }
   const open = [...openById.values()];
   const topAlerts = buildVpTopAlerts(open);
-  const aiQueue = dashboard.ai_queue.filter(isOpen);
+  const aiQueue = dashboard.ai_queue.filter(isOpen).slice(0, 3);
   const headline = computeVpHeadlineFromOpenIssues(open);
   const kpi_cards = patchVpKpiCardsFromHeadline(dashboard.kpi_cards, headline);
   const team_scorecard = computeVpTeamScorecardFromOpen(open);
@@ -231,19 +232,13 @@ export function filterOpenVPDashboard(dashboard: VPDashboard, closedIds?: Readon
 }
 
 export function rowsForVpFilter(issues: VPIssueRow[], filterType: string): VPIssueRow[] {
-  const sorted = [...issues].sort(
-    (a, b) =>
-      (a.sla_days_remaining ?? 999) - (b.sla_days_remaining ?? 999) ||
-      (a.dollar_exposure ?? 0) - (b.dollar_exposure ?? 0),
-  );
+  let rows = issues;
   if (filterType === "sla_risk") {
-    return sorted.filter(isVpSlaRiskIssue);
+    rows = issues.filter(isVpSlaRiskIssue);
+  } else if (filterType === "escalation") {
+    rows = issues.filter(isVpEscalationIssue);
   }
-  if (filterType === "escalation") {
-    return sorted.filter(isVpEscalationIssue);
-  }
-  if (filterType === "resolution_rate") return sorted;
-  return sorted;
+  return sortByDollarDesc(rows, (row) => row.dollar_exposure);
 }
 
 export function displayAiFix(row: VPIssueRow): string {

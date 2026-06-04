@@ -2,6 +2,7 @@ import type { CCODashboard, CCOIssue, CCOKpiKey, CCOMonthOnMonthRow } from "../s
 import { resolveCcoAssigneeName } from "../config/ccoTeamOwners";
 import { isCcoIssueResolved } from "./ccoWorkflowStorage";
 import { isHighValueRecordApproved } from "./highValueRecordSync";
+import { sortByDollarDesc } from "./personaKpiSort";
 
 export type { CCODashboard, CCOIssue, CCOKpiKey } from "../services/api";
 
@@ -379,28 +380,11 @@ export function sortTopAlerts(issues: CCOIssue[]): CCOIssue[] {
 }
 
 export function rowsForCcoKpi(key: CCOKpiKey, issues: CCOIssue[]): CCOIssue[] {
-  const open = [...issues];
-  const byPriority = (a: CCOIssue, b: CCOIssue) => {
-    const pa = PRIORITY_ORDER[a.priority] ?? 9;
-    const pb = PRIORITY_ORDER[b.priority] ?? 9;
-    if (pa !== pb) return pa - pb;
-    return a.sla_days_remaining - b.sla_days_remaining;
-  };
-
-  switch (key) {
-    case "regulatory_penalty_exposure":
-      return open.sort((a, b) => b.penalty_exposure - a.penalty_exposure);
-    case "capa_breach_risk":
-      return open
-        .filter((i) => i.capa_breach_risk === 1)
-        .sort((a, b) => b.penalty_exposure - a.penalty_exposure);
-    case "audit_readiness_score":
-      return open.sort((a, b) => b.audit_readiness_impact - a.audit_readiness_impact);
-    case "predicted_annual_risk":
-      return open.sort(byPriority);
-    default:
-      return open;
+  let rows = issues;
+  if (key === "capa_breach_risk") {
+    rows = issues.filter((i) => i.capa_breach_risk === 1);
   }
+  return sortByDollarDesc(rows, (row) => row.penalty_exposure);
 }
 
 export function priorityClass(priority: string): string {

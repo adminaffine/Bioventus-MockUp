@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { api, type StewardClosure, type StewardDashboard } from "../services/api";
+import { normalizeStewardDashboard } from "../utils/stewardOwnerNormalize";
 import { clearStewardAiRejected } from "../utils/stewardWorkflowStorage";
 
 function formatMoney(value: number): string {
@@ -27,7 +28,7 @@ export function StewardWorkflowProvider({ children }: { children: ReactNode }) {
   const [aiActionPendingId, setAiActionPendingId] = useState<string | null>(null);
 
   const applyDashboard = useCallback((data: StewardDashboard) => {
-    setDashboard(data);
+    setDashboard(normalizeStewardDashboard(data));
     setDashboardRevision((n) => n + 1);
   }, []);
 

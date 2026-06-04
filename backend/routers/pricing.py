@@ -359,7 +359,7 @@ def _build_dashboard_payload(session_id: str) -> dict:
             {"name": "Expiring Contracts", "value": metrics["expiring_contracts"], "unit": "open", "description": "GPO contracts expiring within 30 days requiring renewal action", "filter_type": "expiring"},
             {"name": "Product Recalls", "value": metrics["product_recalls"], "unit": "open", "description": "Orders placed after product recall date — regulatory violations requiring immediate credit", "filter_type": "recalled"},
             {"name": "Compliance Exposure", "value": metrics["total_exposure"], "unit": "dollars", "description": "Total dollar exposure from active GPO conflicts, expiring contracts, and recalled product orders", "filter_type": "all"},
-            {"name": "Annualized Exposure", "value": metrics["annualized_exposure"], "unit": "dollars", "description": "Projected annualized exposure based on the current active conflict volume", "filter_type": "all"},
+            {"name": "Annualized Exposure", "value": metrics["annualized_exposure"], "unit": "dollars", "description": "Projected annualized exposure based on the current active conflict volume", "filter_type": "annualized"},
         ],
         "top_alerts": top_alerts,
         "ai_queue": ai_queue,
@@ -382,6 +382,7 @@ def pricing_issue(issue_id: str, session_id: str = Depends(get_pricing_demo_sess
     is_conflict = issue["issue_type"] in ("GPO Pricing Conflict", "No GPO Membership", "GPO Chargeback Dispute")
     is_expiring = issue["issue_type"] == "Contract Expiring"
     is_chargeback = issue["issue_type"] == "GPO Chargeback Dispute"
+    is_recalled = issue["issue_type"] == "Product Recalled"
     overcharge = float(issue.get("overcharge_per_unit", 0)) * int(issue.get("quantity_affected", 0) or 0)
     dollar_value = float(issue.get("dollar_value", 0) or 0)
     if is_chargeback:
@@ -419,8 +420,45 @@ def pricing_issue(issue_id: str, session_id: str = Depends(get_pricing_demo_sess
         },
         "what_happened": what_happened,
         "business_risk": [
-            {"risk_type": "Revenue at Risk", "status": issue["risk_revenue"], "detail": "Chargeback initiated by customer will recover overcharge" if is_conflict else "Contract gap creates immediate revenue leakage"},
-            {"risk_type": "Chargeback Exposure", "status": issue["risk_chargeback"], "detail": "Customer will dispute invoice once overcharge detected" if is_conflict else "N/A"},
+            {
+                "risk_type": "Revenue at Risk",
+                "status": issue["risk_revenue"],
+                "detail": (
+                    str(issue.get("risk_revenue") or "").strip()
+                    if is_chargeback or is_recalled
+                    else (
+                        "Chargeback initiated by customer will recover overcharge"
+                        if is_conflict
+                        else (
+                            f"Contract renewal gap — ${dollar_value:,.0f} at risk if {issue['contract_id']} lapses"
+                            if is_expiring
+                            else "Contract gap creates immediate revenue leakage"
+                        )
+                    )
+                ),
+            },
+            {
+                "risk_type": "Chargeback Exposure",
+                "status": issue["risk_chargeback"],
+                "detail": (
+                    str(issue.get("risk_chargeback") or "").strip()
+                    if is_chargeback or is_recalled
+                    else (
+                        "Customer will dispute invoice once overcharge detected"
+                        if is_conflict
+                        else (
+                            "N/A — contract renewal risk only"
+                            if is_expiring
+                            else "N/A"
+                        )
+                    )
+                )
+                or (
+                    f"${dollar_value:,.0f} full credit required — order placed after {issue.get('product', 'product')} recall"
+                    if is_recalled
+                    else ""
+                ),
+            },
             {"risk_type": "GPO Compliance", "status": issue["risk_compliance"], "detail": "GPO contract obligation requires correct tier pricing at all times"},
             {"risk_type": "Mapping Accuracy", "status": issue["risk_gpo"], "detail": "Every open conflict reduces overall GPO mapping accuracy score"},
         ],

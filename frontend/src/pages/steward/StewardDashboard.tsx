@@ -7,6 +7,7 @@ import AiRecommendationQueueSection, {
 } from "../../components/shared/AiRecommendationQueueSection";
 import { useStewardWorkflow } from "../../context/StewardWorkflowContext";
 import type { StewardIssueRow } from "../../services/api";
+import { sortByDollarDesc } from "../../utils/personaKpiSort";
 import { markStewardAiRejected, stewardCtaPulseClassAmber } from "../../utils/stewardWorkflowStorage";
 
 const money = (n: number) => n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
@@ -86,7 +87,7 @@ export default function StewardDashboard() {
     },
   ];
 
-  const rows = data.all_open_issues.filter((r) => {
+  const filtered = data.all_open_issues.filter((r) => {
     if (activeKpiModal === "hierarchy") return r.issue_type === "Hierarchy Mismatch";
     if (activeKpiModal === "orphan") return r.issue_type === "Orphan Record";
     if (activeKpiModal === "tax_gap") return r.issue_type === "Tax Jurisdiction Gap";
@@ -96,6 +97,7 @@ export default function StewardDashboard() {
     if (activeKpiModal === "annualized_exposure") return true;
     return false;
   });
+  const rows = sortByDollarDesc(filtered, (r) => r.dollar_value);
 
   const activeKpiCard = displayKpiCards.find((k) => k.filter_type === activeKpiModal);
 

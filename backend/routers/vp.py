@@ -356,6 +356,29 @@ def _kpi_cards_array(headline: dict) -> list[dict]:
     ]
 
 
+def _effective_ai_fix(issue: dict) -> str:
+    fix = (issue.get("ai_fix_1") or "").strip()
+    if fix:
+        return fix
+    primary = (issue.get("next_action_primary") or "").strip()
+    if primary:
+        return primary
+    signal = (issue.get("vp_action_signal") or "").strip()
+    if signal:
+        return f"Monitor and execute: {signal}"
+    return _vp_fallback_resolution_statement(issue)
+
+
+def _effective_ai_confidence(issue: dict) -> float:
+    confidence = float(issue.get("ai_confidence_1") or 0)
+    return confidence if confidence > 0 else 86.0
+
+
+def _effective_ai_source(issue: dict) -> str:
+    source = (issue.get("ai_source_1") or "").strip()
+    return source if source else "Operations Intelligence Engine"
+
+
 def _issue_to_alert_row(issue: dict) -> dict:
     return {
         "issue_id": issue.get("issue_id"),
@@ -372,9 +395,9 @@ def _issue_to_alert_row(issue: dict) -> dict:
         "sla_days_remaining": _sla_days_remaining(issue, default=0),
         "sla_health": issue.get("sla_health") or "On Track",
         "status": issue.get("status") or "Open",
-        "ai_fix_1": issue.get("ai_fix_1"),
-        "ai_confidence_1": issue.get("ai_confidence_1") or 0,
-        "ai_source_1": issue.get("ai_source_1"),
+        "ai_fix_1": _effective_ai_fix(issue),
+        "ai_confidence_1": _effective_ai_confidence(issue),
+        "ai_source_1": _effective_ai_source(issue),
         "ai_fix_2": issue.get("ai_fix_2"),
         "ai_confidence_2": issue.get("ai_confidence_2") or 0,
         "ai_source_2": issue.get("ai_source_2"),
@@ -396,9 +419,7 @@ def _build_dashboard(issues: list[dict]) -> dict:
 
     top_alerts = sorted(open_issues, key=_alert_sort_key)[:8]
     ai_queue = [
-        i
-        for i in open_issues
-        if i.get("ai_fix_1") and not i.get("ai_decision")
+        i for i in sorted(open_issues, key=_alert_sort_key) if not i.get("ai_decision")
     ][:3]
 
     team_scorecard = _effective_team_scorecard(issues)
@@ -642,8 +663,10 @@ def _primary_owner_block(issue: dict) -> dict:
 
 def _build_issue_detail(issue: dict) -> dict:
     capa_list = _capa_list(issue)
-    ai_fix_1 = (issue.get("ai_fix_1") or "").strip()
+    ai_fix_1 = _effective_ai_fix(issue)
     ai_fix_2 = (issue.get("ai_fix_2") or "").strip()
+    ai_confidence_1 = _effective_ai_confidence(issue)
+    ai_source_1 = _effective_ai_source(issue)
 
     secondary_owner = None
     if issue.get("secondary_owner_id"):
@@ -659,16 +682,14 @@ def _build_issue_detail(issue: dict) -> dict:
             "completion_pct": int(issue.get("completion_secondary") or 0),
         }
 
-    ai_recommendations = []
-    if ai_fix_1:
-        ai_recommendations.append(
-            {
-                "fix": ai_fix_1,
-                "fix_type": "Fix 1",
-                "confidence": float(issue.get("ai_confidence_1") or 0),
-                "source": issue.get("ai_source_1") or "",
-            }
-        )
+    ai_recommendations = [
+        {
+            "fix": ai_fix_1,
+            "fix_type": "Fix 1",
+            "confidence": ai_confidence_1,
+            "source": ai_source_1,
+        }
+    ]
     if ai_fix_2:
         ai_recommendations.append(
             {
@@ -702,8 +723,8 @@ def _build_issue_detail(issue: dict) -> dict:
         "owners": [o for o in [_primary_owner_block(issue), secondary_owner] if o],
         "ai_recommendation": {
             "fix": ai_fix_1,
-            "confidence": float(issue.get("ai_confidence_1") or 0),
-            "source": issue.get("ai_source_1") or "",
+            "confidence": ai_confidence_1,
+            "source": ai_source_1,
             "fix_secondary": ai_fix_2,
             "confidence_secondary": float(issue.get("ai_confidence_2") or 0),
             "source_secondary": issue.get("ai_source_2") or "",

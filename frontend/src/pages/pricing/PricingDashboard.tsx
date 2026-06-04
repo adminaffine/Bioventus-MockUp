@@ -7,6 +7,7 @@ import AiRecommendationQueueSection, {
 } from "../../components/shared/AiRecommendationQueueSection";
 import { usePricingWorkflow } from "../../context/PricingWorkflowContext";
 import type { PricingIssueRow, PricingKpiCard } from "../../services/api";
+import { sortByDollarDesc } from "../../utils/personaKpiSort";
 import {
   markPricingAiRejected,
   clearPricingAiRejected,
@@ -43,20 +44,54 @@ function displayIssueValue(row: PricingIssueRow): number {
   return Number(row.dollar_value || 0);
 }
 
-function rowsForFilter(issues: PricingIssueRow[], filterType: string): PricingIssueRow[] {
-  const visibleIssues = issues.filter((i) => i.issue_type !== "No GPO Membership");
-  if (filterType === "conflict") {
-    return visibleIssues.filter((i) =>
-      i.issue_type === "GPO Pricing Conflict" || i.issue_type === "GPO Chargeback Dispute",
-    );
-  }
-  if (filterType === "expiring") return visibleIssues.filter((i) => i.issue_type === "Contract Expiring");
-  if (filterType === "recalled") return visibleIssues.filter((i) => i.issue_type === "Product Recalled");
-  if (filterType === "all") return visibleIssues;
-  return visibleIssues;
+function rowAnnualizedExposure(row: PricingIssueRow): number {
+  return displayIssueValue(row) * 12;
 }
 
-function KpiIssuesTable({ rows, onRowClick }: { rows: PricingIssueRow[]; onRowClick: (id: string) => void }) {
+function rowsForFilter(
+  issues: PricingIssueRow[],
+  filterType: string,
+  cardName?: string,
+): PricingIssueRow[] {
+  const visibleIssues = issues.filter((i) => i.issue_type !== "No GPO Membership");
+  const exposureFilter =
+    cardName === "Annualized Exposure" ? "annualized" : cardName === "Compliance Exposure" ? "all" : filterType;
+  let rows = visibleIssues;
+  if (exposureFilter === "conflict") {
+    rows = visibleIssues.filter((i) =>
+      i.issue_type === "GPO Pricing Conflict" || i.issue_type === "GPO Chargeback Dispute",
+    );
+    return sortByDollarDesc(rows, (row) => row.dollar_value);
+  } else if (filterType === "expiring") {
+    rows = visibleIssues.filter((i) => i.issue_type === "Contract Expiring");
+  } else if (filterType === "recalled") {
+    rows = visibleIssues.filter((i) => i.issue_type === "Product Recalled");
+  }
+  const dollarPick =
+    exposureFilter === "annualized"
+      ? (row: PricingIssueRow) => rowAnnualizedExposure(row)
+      : (row: PricingIssueRow) => displayIssueValue(row);
+  return sortByDollarDesc(rows, dollarPick);
+}
+
+function displayTopAlertInvoiceStatus(row: PricingIssueRow): string {
+  const status = (row.invoice_status || "").trim();
+  if (row.issue_type === "Contract Expiring") return status || "—";
+  if (status === "Invoiced" || status === "Post-Invoice") return "Invoiced";
+  if (row.order_id) return "Invoiced";
+  return status || "—";
+}
+
+function KpiIssuesTable({
+  rows,
+  onRowClick,
+  formatValue,
+}: {
+  rows: PricingIssueRow[];
+  onRowClick: (id: string) => void;
+  formatValue?: (row: PricingIssueRow) => string;
+}) {
+  const valueFor = formatValue ?? ((row: PricingIssueRow) => formatMoney(row.dollar_value));
   if (rows.length === 0) {
     return <p className="py-8 text-center text-sm text-slate-500">No matching open issues.</p>;
   }
@@ -87,7 +122,7 @@ function KpiIssuesTable({ rows, onRowClick }: { rows: PricingIssueRow[]; onRowCl
             <td className="py-2 pr-4">
               <span className={`text-xs px-2 py-0.5 rounded ${priorityClass(row.priority)}`}>{row.priority}</span>
             </td>
-            <td className="py-2 pr-4">{formatMoney(row.dollar_value)}</td>
+            <td className="py-2 pr-4">{valueFor(row)}</td>
             <td className="py-2 pr-4">{row.owner_name}</td>
           </tr>
         ))}
@@ -99,7 +134,7 @@ function KpiIssuesTable({ rows, onRowClick }: { rows: PricingIssueRow[]; onRowCl
 export default function PricingDashboard() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { dashboard: data, dashboardRevision, loading, applyAiAction, aiActionPendingId, refreshDashboard } =
+  const { dashboard: data, dashboardRevision, loading, applyAiAction, aiActionPendingId, refreshDashboard, resolveIssue } =
     usePricingWorkflow();
   const [activeKpiModal, setActiveKpiModal] = useState<string | null>(null);
   const [aiDecisions, setAiDecisions] = useState<Record<string, "approved" | "rejected">>({});
@@ -131,16 +166,19 @@ export default function PricingDashboard() {
     await applyAiAction(issueId, "approve");
     clearPricingAiRejected(issueId);
     setAiDecisions((s) => ({ ...s, [issueId]: "approved" }));
-    navigate(`/pricing/closure/${issueId}`);
+    const closure = await resolveIssue(issueId);
+    navigate(`/pricing/closure/${issueId}`, { state: { closure } });
   };
 
   if (loading && !data) return <div className="text-sm text-slate-500 dark:text-slate-400">Loading...</div>;
   if (!data) return null;
 
-  const activeCard = data.kpi_cards.find((c) => c.filter_type === activeKpiModal);
-  const modalRows = activeKpiModal ? rowsForFilter(data.all_open_issues, activeKpiModal) : [];
+  const activeCard = data.kpi_cards.find((c) => c.name === activeKpiModal || c.filter_type === activeKpiModal);
+  const modalRows = activeCard
+    ? rowsForFilter(data.all_open_issues, activeCard.filter_type, activeCard.name)
+    : [];
   const nudgeNextPriorityIssueId = data.ai_queue.length === 0 ? data.my_action_queue[0]?.issue_id ?? null : null;
-  const annualizedExposure =
+  const annualizedExposureTotal =
     data.kpi_cards.find((c) => c.name === "Annualized Exposure")?.value ?? data.headline.total_exposure * 12;
 
   const aiQueueRows: AiRecommendationQueueRow[] = data.ai_queue.map((row) => ({
@@ -158,7 +196,7 @@ export default function PricingDashboard() {
       <section className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-6">
         <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Pricing Exposure Dashboard</h1>
         <div
-          key={`h-${data.headline.total_exposure}-${data.headline.active_conflicts}-${data.headline.expiring_contracts}-${annualizedExposure}`}
+          key={`h-${data.headline.total_exposure}-${data.headline.active_conflicts}-${data.headline.expiring_contracts}-${annualizedExposureTotal}`}
           className="mt-3 flex flex-wrap gap-2"
         >
           <span className="text-xs px-3 py-1 rounded-full bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300">
@@ -171,7 +209,7 @@ export default function PricingDashboard() {
             {data.headline.expiring_contracts} contracts expiring
           </span>
           <span className="text-xs px-3 py-1 rounded-full bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300">
-            Annualized Exposure - {formatMoney(annualizedExposure)}
+            Annualized Exposure - {formatMoney(annualizedExposureTotal)}
           </span>
         </div>
       </section>
@@ -213,7 +251,7 @@ export default function PricingDashboard() {
             label={card.name}
             valueDisplay={formatPersonaKpiValue(card.value, card.unit, formatMoney)}
             description={card.description}
-            onClick={() => setActiveKpiModal(card.filter_type)}
+            onClick={() => setActiveKpiModal(card.name)}
           />
         ))}
       </PersonaKpiCardGrid>
@@ -227,7 +265,17 @@ export default function PricingDashboard() {
           onClose={() => setActiveKpiModal(null)}
           emptyHint="No matching open issues."
         >
-          <KpiIssuesTable rows={modalRows} onRowClick={handleKpiRowClick} />
+          <KpiIssuesTable
+            rows={modalRows}
+            onRowClick={handleKpiRowClick}
+            formatValue={
+              activeCard.name === "Annualized Exposure"
+                ? (row) => formatMoney(rowAnnualizedExposure(row))
+                : activeCard.name === "Compliance Exposure"
+                  ? (row) => formatMoney(displayIssueValue(row))
+                  : undefined
+            }
+          />
         </KpiDrilldownModal>
       )}
 
@@ -263,7 +311,7 @@ export default function PricingDashboard() {
                     <span className={`text-xs px-2 py-0.5 rounded ${priorityClass(row.priority)}`}>{row.priority}</span>
                   </td>
                   <td className="py-2 pr-4">{formatMoney(displayIssueValue(row))}</td>
-                  <td className="py-2 pr-4">{row.invoice_status || "—"}</td>
+                  <td className="py-2 pr-4">{displayTopAlertInvoiceStatus(row)}</td>
                   <td className="py-2 pr-4">{row.owner_name}</td>
                 </tr>
               ))}

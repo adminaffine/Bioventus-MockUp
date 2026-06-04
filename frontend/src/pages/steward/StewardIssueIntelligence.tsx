@@ -6,6 +6,7 @@ import StewardActionToast from "../../components/steward/StewardActionToast";
 import StewardAiRecommendationPanel from "../../components/steward/StewardAiRecommendationPanel";
 import StewardReassignModal from "../../components/steward/StewardReassignModal";
 import type { StewardTeamOwner } from "../../config/stewardTeamOwners";
+import { resolveStewardOwner } from "../../utils/stewardOwnerNormalize";
 import { pricingStickyBtnPrimary } from "../../components/pricing/pricingStickyButtonStyles";
 
 export default function StewardIssueIntelligence() {
@@ -23,7 +24,14 @@ export default function StewardIssueIntelligence() {
   const loadIssue = () => {
     if (!issueId) return;
     setLoading(true);
-    api.getStewardIssue(issueId).then(setData).finally(() => setLoading(false));
+    api.getStewardIssue(issueId).then((detail) => {
+      const owner = resolveStewardOwner(detail.issue);
+      setData({
+        ...detail,
+        issue: { ...detail.issue, owner_id: owner.owner_id, owner_name: owner.owner_name },
+        owner: { ...detail.owner, owner_id: owner.owner_id, owner_name: owner.owner_name },
+      });
+    }).finally(() => setLoading(false));
   };
 
   useEffect(() => {

@@ -3,8 +3,32 @@ import { markCcoIssueResolved } from "./ccoWorkflowStorage";
 import { HIGH_VALUE_LINKED_GROUPS, isExecutiveHighValueRecord } from "./executiveApprovalRecord";
 
 export const HIGH_VALUE_APPROVED_EVENT = "lumina-high-value-approved";
-// Intentionally in-memory only: resets to baseline on full browser refresh.
-const approvedHighValueIds = new Set<string>();
+const STORAGE_KEY = "lumina-high-value-approved-ids";
+
+function loadApprovedIds(): Set<string> {
+  const ids = new Set<string>();
+  try {
+    const raw = sessionStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      for (const id of JSON.parse(raw) as string[]) {
+        ids.add(id);
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+  return ids;
+}
+
+function persistApprovedIds(ids: Set<string>): void {
+  try {
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify([...ids]));
+  } catch {
+    /* ignore */
+  }
+}
+
+const approvedHighValueIds = loadApprovedIds();
 
 /** All record IDs in the same executive group (includes the given id). */
 export function getLinkedHighValueRecordIds(recordId: string): string[] {
@@ -17,6 +41,11 @@ export function isHighValueRecordApproved(recordId: string): boolean {
   return getLinkedHighValueRecordIds(recordId).some((id) => approvedHighValueIds.has(id));
 }
 
+/** True when CFO/CCO executive approval already removed linked records from persona KPIs. */
+export function isExecutiveClosureKpiPatchNeeded(issueId: string): boolean {
+  return getLinkedHighValueRecordIds(issueId).some((id) => isHighValueRecordApproved(id));
+}
+
 /** Mark executive high-value record(s) approved — syncs KPIs across CFO/CCO/Pricing/Tax. */
 export function markHighValueRecordApproved(recordId: string): void {
   if (!isExecutiveHighValueRecord(recordId)) return;
@@ -27,6 +56,7 @@ export function markHighValueRecordApproved(recordId: string): void {
     if (id.startsWith("CFO-")) markCfoAlertResolved(id);
     if (id.startsWith("CCO-")) markCcoIssueResolved(id);
   }
+  persistApprovedIds(approvedHighValueIds);
 
   window.dispatchEvent(
     new CustomEvent(HIGH_VALUE_APPROVED_EVENT, { detail: { recordId, approvedIds: [...ids] } }),

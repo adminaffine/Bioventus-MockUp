@@ -1,12 +1,13 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { api, type TaxClosure, type TaxDashboard } from "../services/api";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { api, type TaxClosure, type TaxDashboard, type TaxIssueRow } from "../services/api";
 import { EXECUTIVE_APPROVAL_TAX_ISSUE_ID } from "../utils/executiveApprovalRecord";
 import {
   markHighValueRecordApproved,
   subscribeHighValueApproved,
 } from "../utils/highValueRecordSync";
 import { patchDashboardAfterAiAction } from "../utils/taxDashboardPatch";
-import { syncTaxDashboardKpis } from "../utils/taxDashboardSync";
+import { patchTaxClosureKpiForExecutiveApproval } from "../utils/executiveClosureKpiPatch";
+import { findTaxIssueRow, syncTaxDashboardKpis } from "../utils/taxDashboardSync";
 import { clearTaxAiRejected } from "../utils/taxWorkflowStorage";
 
 function normalizeTaxDashboard(dashboard: TaxDashboard): TaxDashboard {
@@ -19,9 +20,10 @@ function formatMoney(value: number): string {
 
 type TaxWorkflowContextValue = {
   dashboard: TaxDashboard | null;
+  dashboardRevision: number;
   loading: boolean;
   aiActionPendingId: string | null;
-  refreshDashboard: () => Promise<void>;
+  refreshDashboard: (options?: { silent?: boolean }) => Promise<void>;
   applyAiAction: (issueId: string, action: "approve" | "reject") => Promise<void>;
   issueAction: (
     issueId: string,
@@ -38,18 +40,29 @@ const TaxWorkflowContext = createContext<TaxWorkflowContextValue | null>(null);
 
 export function TaxWorkflowProvider({ children }: { children: ReactNode }) {
   const [dashboard, setDashboard] = useState<TaxDashboard | null>(null);
+  const [dashboardRevision, setDashboardRevision] = useState(0);
   const [loading, setLoading] = useState(true);
   const [aiActionPendingId, setAiActionPendingId] = useState<string | null>(null);
+  const dashboardRef = useRef<TaxDashboard | null>(null);
 
-  const refreshDashboard = useCallback(async () => {
-    setLoading(true);
+  useEffect(() => {
+    dashboardRef.current = dashboard;
+  }, [dashboard]);
+
+  const applyDashboard = useCallback((data: TaxDashboard) => {
+    setDashboard(normalizeTaxDashboard(data));
+    setDashboardRevision((n) => n + 1);
+  }, []);
+
+  const refreshDashboard = useCallback(async (options?: { silent?: boolean }) => {
+    if (!options?.silent) setLoading(true);
     try {
       const data = await api.getTaxDashboard();
-      setDashboard(normalizeTaxDashboard(data));
+      applyDashboard(data);
     } finally {
-      setLoading(false);
+      if (!options?.silent) setLoading(false);
     }
-  }, []);
+  }, [applyDashboard]);
 
   useEffect(() => {
     void refreshDashboard();
@@ -58,14 +71,17 @@ export function TaxWorkflowProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     return subscribeHighValueApproved(() => {
       setDashboard((prev) => (prev ? normalizeTaxDashboard(prev) : prev));
+      setDashboardRevision((n) => n + 1);
+      void refreshDashboard({ silent: true });
     });
-  }, []);
+  }, [refreshDashboard]);
 
   const applyAiAction = useCallback(
     async (issueId: string, action: "approve" | "reject") => {
       if (action === "approve" && issueId === EXECUTIVE_APPROVAL_TAX_ISSUE_ID) {
         markHighValueRecordApproved(issueId);
         setDashboard((prev) => (prev ? normalizeTaxDashboard(prev) : prev));
+        setDashboardRevision((n) => n + 1);
       }
       setAiActionPendingId(issueId);
       setDashboard((prev) =>
@@ -73,7 +89,7 @@ export function TaxWorkflowProvider({ children }: { children: ReactNode }) {
       );
       try {
         const result = await api.postTaxAiAction({ issue_id: issueId, action });
-        setDashboard(normalizeTaxDashboard(result.dashboard));
+        applyDashboard(result.dashboard);
       } catch (err) {
         await refreshDashboard();
         throw err;
@@ -81,18 +97,37 @@ export function TaxWorkflowProvider({ children }: { children: ReactNode }) {
         setAiActionPendingId(null);
       }
     },
-    [refreshDashboard],
+    [applyDashboard, refreshDashboard],
   );
 
   const resolveIssue = useCallback(async (issueId: string) => {
     if (issueId === EXECUTIVE_APPROVAL_TAX_ISSUE_ID) {
       markHighValueRecordApproved(issueId);
       setDashboard((prev) => (prev ? normalizeTaxDashboard(prev) : prev));
+      setDashboardRevision((n) => n + 1);
+    }
+    const preResolve = dashboardRef.current;
+    let resolvedIssue: TaxIssueRow | undefined = preResolve
+      ? findTaxIssueRow(normalizeTaxDashboard(preResolve), issueId)
+      : undefined;
+    if (!resolvedIssue) {
+      try {
+        const detail = await api.getTaxIssue(issueId);
+        resolvedIssue = detail.issue;
+      } catch {
+        resolvedIssue = undefined;
+      }
     }
     const result = await api.postTaxResolve({ issue_id: issueId });
-    setDashboard(normalizeTaxDashboard(result.dashboard));
-    return result.closure;
-  }, []);
+    const postResolve = normalizeTaxDashboard(result.dashboard);
+    applyDashboard(result.dashboard);
+    return patchTaxClosureKpiForExecutiveApproval(
+      result.closure,
+      issueId,
+      postResolve,
+      resolvedIssue,
+    );
+  }, [applyDashboard]);
 
   const approveAndResolve = useCallback(
     async (issueId: string) => {
@@ -117,10 +152,10 @@ export function TaxWorkflowProvider({ children }: { children: ReactNode }) {
         owner_id: options?.owner_id,
         owner_name: options?.owner_name,
       });
-      setDashboard(normalizeTaxDashboard(result.dashboard));
+      applyDashboard(result.dashboard);
       return { message: result.message };
     },
-    [],
+    [applyDashboard],
   );
 
   const taxBannerStats = useMemo(() => {
@@ -149,6 +184,7 @@ export function TaxWorkflowProvider({ children }: { children: ReactNode }) {
     <TaxWorkflowContext.Provider
       value={{
         dashboard,
+        dashboardRevision,
         loading,
         aiActionPendingId,
         refreshDashboard,

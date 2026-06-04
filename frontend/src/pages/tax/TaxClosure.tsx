@@ -1,8 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { CheckCircle } from "lucide-react";
-import type { TaxClosure as TaxClosureData } from "../../services/api";
+import { api, type TaxClosure as TaxClosureData, type TaxIssueRow } from "../../services/api";
 import { useTaxWorkflow } from "../../context/TaxWorkflowContext";
+import { taxClosureKpiImpactForDisplay } from "../../utils/executiveClosureKpiPatch";
+import { findTaxIssueRow } from "../../utils/taxDashboardSync";
 import {
   buildTaxKpiImpactNoteLines,
   closureKpiRows,
@@ -22,15 +24,16 @@ export default function TaxClosure() {
   const navigate = useNavigate();
   const location = useLocation();
   const closureFromNav = (location.state as TaxClosureLocationState | null)?.closure;
-  const { resolveIssue, refreshDashboard } = useTaxWorkflow();
-  const [data, setData] = useState<TaxClosureData | null>(closureFromNav ?? null);
+  const { resolveIssue, refreshDashboard, dashboard, dashboardRevision } = useTaxWorkflow();
+  const [data, setClosure] = useState<TaxClosureData | null>(closureFromNav ?? null);
+  const [resolvedIssue, setResolvedIssue] = useState<TaxIssueRow | null>(null);
   const [loading, setLoading] = useState(!closureFromNav);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!issueId) return;
     if (closureFromNav) {
-      setData(closureFromNav);
+      setClosure(closureFromNav);
       setLoading(false);
       setError(null);
       return;
@@ -38,7 +41,7 @@ export default function TaxClosure() {
     setLoading(true);
     setError(null);
     resolveIssue(issueId)
-      .then(setData)
+      .then(setClosure)
       .catch((err) => {
         const msg = err instanceof Error ? err.message : String(err);
         if (msg.includes("manual") || msg.includes("Approve the AI")) {
@@ -52,6 +55,22 @@ export default function TaxClosure() {
       .finally(() => setLoading(false));
   }, [issueId, closureFromNav, resolveIssue]);
 
+  useEffect(() => {
+    if (!issueId) return;
+    const fromDashboard = dashboard ? findTaxIssueRow(dashboard, issueId) : undefined;
+    if (fromDashboard) {
+      setResolvedIssue(fromDashboard);
+      return;
+    }
+    void api.getTaxIssue(issueId).then((detail) => setResolvedIssue(detail.issue)).catch(() => setResolvedIssue(null));
+  }, [issueId, dashboard, dashboardRevision]);
+
+  const kpiImpact = useMemo(() => {
+    if (!data || !issueId) return data?.kpi_impact ?? {};
+    if (!dashboard) return data.kpi_impact;
+    return taxClosureKpiImpactForDisplay(data.kpi_impact, issueId, dashboard, resolvedIssue);
+  }, [data, issueId, dashboard, dashboardRevision, resolvedIssue]);
+
   if (loading) {
     return <div className="text-sm text-slate-500 dark:text-slate-400">Recording resolution and updating dashboard…</div>;
   }
@@ -61,9 +80,9 @@ export default function TaxClosure() {
   if (!data) return null;
 
   const rc = data.resolution_confirmation;
-  const kpiEntries = closureKpiRows(data.kpi_impact);
+  const kpiEntries = closureKpiRows(kpiImpact);
   const aiRejected = issueId ? isTaxAiRejected(issueId) : false;
-  const kpiImpactNoteLines = buildTaxKpiImpactNoteLines(data.kpi_impact);
+  const kpiImpactNoteLines = buildTaxKpiImpactNoteLines(kpiImpact);
 
   return (
     <div className="space-y-6">

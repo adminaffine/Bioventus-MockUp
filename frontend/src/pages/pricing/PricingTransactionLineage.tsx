@@ -70,15 +70,16 @@ export default function PricingTransactionLineage() {
     if (!data) return;
     setStickyPending(true);
     try {
+      let closure;
       if (data.action_label === "Enroll in GPO") {
-        await resolveIssue(data.issue_id);
+        closure = await resolveIssue(data.issue_id);
         setActionToast("Renewal initiated — proceeding to Pricing Closure");
       } else {
         await api.pricingCreditMemoQueued(data.issue_id);
-        await resolveIssue(data.issue_id);
+        closure = await resolveIssue(data.issue_id);
         setActionToast(`${data.action_label} queued — proceeding to Pricing Closure`);
       }
-      navigate(`/pricing/closure/${data.issue_id}`);
+      navigate(`/pricing/closure/${data.issue_id}`, { state: { closure } });
     } finally {
       setStickyPending(false);
     }

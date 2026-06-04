@@ -7,6 +7,8 @@ import AiRecommendationQueueSection, {
 } from "../../components/shared/AiRecommendationQueueSection";
 import { useTaxWorkflow } from "../../context/TaxWorkflowContext";
 import type { TaxIssueRow } from "../../services/api";
+import { sortByDollarDesc } from "../../utils/personaKpiSort";
+import { buildTaxUnderpaymentIssuesDesc } from "../../utils/taxDashboardSync";
 import { markTaxAiRejected, taxCtaPulseClassAmber } from "../../utils/taxWorkflowStorage";
 
 export type KpiPanelId =
@@ -56,23 +58,30 @@ function allIssues(data: NonNullable<ReturnType<typeof useTaxWorkflow>["dashboar
 
 function rowsForKpi(data: NonNullable<ReturnType<typeof useTaxWorkflow>["dashboard"]>, kpi: KpiPanelId): TaxIssueRow[] {
   const issues = allIssues(data);
+  let rows: TaxIssueRow[];
   switch (kpi) {
     case "Jurisdiction Mismatches":
-      return [...issues].sort((a, b) => {
-        const p = (b.priority === "HIGH" ? 1 : 0) - (a.priority === "HIGH" ? 1 : 0);
-        return p !== 0 ? p : a.sla_days_remaining - b.sla_days_remaining;
-      });
+      rows = issues;
+      break;
     case "Pre-Invoice Alerts":
-      return issues.filter((r) => r.pre_invoice === 1);
+      rows = issues.filter((r) => r.pre_invoice === 1);
+      break;
     case "Compliance Exposure":
-      return [...issues].sort((a, b) => b.dollar_value - a.dollar_value);
+      rows = issues;
+      break;
     case "Tax Overpayments":
-      return issues.filter((r) => r.rate_difference < 0);
+      rows = issues.filter((r) => Number(r.rate_difference) < 0);
+      break;
     case "Tax Underpayments":
-      return issues.filter((r) => r.rate_difference > 0);
+      rows =
+        data.tax_underpayment_issues?.length
+          ? data.tax_underpayment_issues
+          : buildTaxUnderpaymentIssuesDesc(issues);
+      return rows;
     default:
-      return issues;
+      rows = issues;
   }
+  return sortByDollarDesc(rows, (row) => row.dollar_value);
 }
 
 const PRIORITY_ORDER: Record<string, number> = { HIGH: 0, MEDIUM: 1, LOW: 2 };
@@ -182,7 +191,7 @@ function IssuesTable({
 
 export default function TaxDashboard() {
   const navigate = useNavigate();
-  const { dashboard: data, loading, applyAiAction, approveAndResolve, aiActionPendingId, refreshDashboard } =
+  const { dashboard: data, dashboardRevision, loading, applyAiAction, approveAndResolve, aiActionPendingId, refreshDashboard } =
     useTaxWorkflow();
   const [activeKpiModal, setActiveKpiModal] = useState<KpiPanelId | null>(null);
   const [aiDecisions, setAiDecisions] = useState<Record<string, "approved" | "rejected">>({});
@@ -259,7 +268,7 @@ export default function TaxDashboard() {
   }));
 
   return (
-    <div className="space-y-6">
+    <div key={dashboardRevision} className="space-y-6 pb-24">
       <section className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-6">
         <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Tax Exposure Dashboard</h1>
         <div className="mt-3 flex flex-wrap gap-2">

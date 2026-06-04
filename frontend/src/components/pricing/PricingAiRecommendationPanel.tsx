@@ -33,7 +33,7 @@ export default function PricingAiRecommendationPanel({
   className = "",
 }: Props) {
   const navigate = useNavigate();
-  const { applyAiAction, aiActionPendingId } = usePricingWorkflow();
+  const { applyAiAction, aiActionPendingId, resolveIssue } = usePricingWorkflow();
   const pending = aiActionPendingId === issueId;
 
   const handleAction = async (action: "approve" | "reject") => {
@@ -45,7 +45,8 @@ export default function PricingAiRecommendationPanel({
     }
     onAfterAction?.();
     if (action === "approve" && navigateOnApprove) {
-      navigate(`/pricing/closure/${issueId}`);
+      const closure = await resolveIssue(issueId);
+      navigate(`/pricing/closure/${issueId}`, { state: { closure } });
     }
   };
 

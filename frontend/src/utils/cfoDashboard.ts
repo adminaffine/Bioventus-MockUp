@@ -6,6 +6,7 @@ import type {
 } from "../services/api";
 import { isCfoAlertResolved } from "./cfoWorkflowStorage";
 import { isHighValueRecordApproved } from "./highValueRecordSync";
+import { sortByDollarDesc } from "./personaKpiSort";
 
 export type CFOKpiKey =
   | "revenue_at_risk"
@@ -492,26 +493,8 @@ export function alertRowSubline(a: CFOAlert): string {
 }
 
 export function rowsForCfoKpi(key: CFOKpiKey, alerts: CFOAlert[]): CFOAlert[] {
-  const open = [...alerts];
-  const byPriority = (a: CFOAlert, b: CFOAlert) => {
-    const pa = PRIORITY_ORDER[a.priority] ?? 9;
-    const pb = PRIORITY_ORDER[b.priority] ?? 9;
-    if (pa !== pb) return pa - pb;
-    return a.sla_days_remaining - b.sla_days_remaining;
-  };
-
-  switch (key) {
-    case "revenue_at_risk":
-      return open.sort((a, b) => b.dollar_exposure - a.dollar_exposure);
-    case "margin_at_risk":
-      return open.sort((a, b) => b.margin_at_risk - a.margin_at_risk);
-    case "compliance_exposure":
-      return open.sort((a, b) => b.penalty_exposure - a.penalty_exposure);
-    case "predicted_annual_exposure":
-      return open.sort(byPriority);
-    default:
-      return open;
-  }
+  void key;
+  return sortByDollarDesc(alerts, (row) => row.dollar_exposure);
 }
 
 export function priorityClass(priority: string): string {

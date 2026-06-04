@@ -110,9 +110,9 @@ export default function PricingIssueIntelligence() {
   const handleInitiateRenewal = async () => {
     try {
       setRenewalPending(true);
-      await resolveIssue(issueId);
+      const closure = await resolveIssue(issueId);
       await refreshDashboard({ silent: true });
-      navigate(`/pricing/closure/${issueId}`);
+      navigate(`/pricing/closure/${issueId}`, { state: { closure } });
     } catch {
       setActionToast("Unable to initiate renewal right now. Please try again.");
     } finally {

@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { CheckCircle } from "lucide-react";
 import type { PricingClosure as PricingClosureData } from "../../services/api";
 import { usePricingWorkflow } from "../../context/PricingWorkflowContext";
@@ -15,21 +15,47 @@ function formatMoney(value: number): string {
   return value.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 }
 
+type PricingClosureLocationState = { closure?: PricingClosureData };
+
 export default function PricingClosure() {
   const { issueId } = useParams<{ issueId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const navClosure = useMemo(() => {
+    const raw = (location.state as PricingClosureLocationState | null)?.closure;
+    if (!raw || !issueId) return undefined;
+    return raw.issue_id === issueId ? raw : undefined;
+  }, [location.state, issueId]);
   const { resolveIssue, refreshDashboard } = usePricingWorkflow();
-  const [data, setData] = useState<PricingClosureData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [data, setClosure] = useState<PricingClosureData | null>(navClosure ?? null);
+  const [loading, setLoading] = useState(!navClosure);
   const [error, setError] = useState<string | null>(null);
+  const loadedIssueRef = useRef<string | null>(navClosure && issueId ? issueId : null);
 
   useEffect(() => {
     if (!issueId) return;
+    if (navClosure) {
+      setClosure(navClosure);
+      setLoading(false);
+      setError(null);
+      loadedIssueRef.current = issueId;
+      return;
+    }
+    if (loadedIssueRef.current === issueId) return;
+
+    let cancelled = false;
+    loadedIssueRef.current = null;
+    setClosure(null);
     setLoading(true);
     setError(null);
     resolveIssue(issueId)
-      .then(setData)
+      .then((closure) => {
+        if (cancelled) return;
+        loadedIssueRef.current = issueId;
+        setClosure(closure);
+      })
       .catch((err) => {
+        if (cancelled) return;
         const msg = err instanceof Error ? err.message : String(err);
         if (msg.includes("cannot be resolved") || msg.includes("credit memo")) {
           setError(
@@ -39,8 +65,14 @@ export default function PricingClosure() {
           setError("Unable to record resolution. Please try again.");
         }
       })
-      .finally(() => setLoading(false));
-  }, [issueId, resolveIssue]);
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [issueId, navClosure, resolveIssue]);
 
   if (loading) {
     return (
@@ -63,9 +95,10 @@ export default function PricingClosure() {
     rc.resolution_type.toLowerCase().includes("renewal") ||
     rc.resolution_type.toLowerCase().includes("enrollment") ||
     rc.issue.toLowerCase().includes("expiring");
-  const kpiEntries = pricingClosureKpiRows(data.kpi_impact);
+  const kpiImpact = data.kpi_impact ?? {};
+  const kpiEntries = pricingClosureKpiRows(kpiImpact);
   const aiRejected = issueId ? isPricingAiRejected(issueId, data.ai_decision) : false;
-  const kpiImpactNoteLines = buildPricingKpiImpactNoteLines(data.kpi_impact);
+  const kpiImpactNoteLines = buildPricingKpiImpactNoteLines(kpiImpact);
 
   return (
     <div className="space-y-6">
@@ -115,7 +148,7 @@ export default function PricingClosure() {
       <section className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-6">
         <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">Next Actions</h2>
         <ul className="mt-4 space-y-2 text-sm text-slate-600 dark:text-slate-300">
-          {data.what_was_updated.map((item) => (
+          {(data.what_was_updated ?? []).map((item) => (
             <li key={item} className="flex gap-2">
               <span className="text-emerald-600 dark:text-emerald-400">✓</span>
               {item}
@@ -124,7 +157,7 @@ export default function PricingClosure() {
         </ul>
       </section>
 
-      {!aiRejected && (
+      {!aiRejected && data.ai_action_log && (
         <section className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-6">
           <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">AI Action Log</h2>
           <table className="mt-4 min-w-full text-sm">
@@ -202,7 +235,7 @@ export default function PricingClosure() {
             </tr>
           </thead>
           <tbody>
-            {data.cross_team_notifications.map((row) => (
+            {(data.cross_team_notifications ?? []).map((row) => (
               <tr key={row.team} className="border-b border-slate-100 dark:border-slate-700/60">
                 <td className="py-2 pr-4 font-medium">{row.team}</td>
                 <td className="py-2 pr-4">{row.owner}</td>
