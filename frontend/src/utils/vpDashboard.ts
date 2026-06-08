@@ -95,19 +95,6 @@ export function teamHealthBarColor(score: number): string {
   return "bg-emerald-500";
 }
 
-const VP_PRIORITY_ORDER: Record<string, number> = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3 };
-
-function vpAlertSortKey(issue: VPIssueRow): [number, number, number] {
-  const sla = issue.sla_days_remaining ?? 999;
-  const priority = VP_PRIORITY_ORDER[(issue.priority || "LOW").toUpperCase()] ?? 3;
-  const exposure = issue.dollar_exposure ?? 0;
-  return [sla, priority, -exposure];
-}
-
-function isVpCrossTeamIssue(issue: VPIssueRow): boolean {
-  return Boolean((issue.secondary_owner_id || "").trim());
-}
-
 /** VP-approved or session-resolved issues must not appear on the dashboard as open. */
 export function isVpIssueStillOpen(issue: VPIssueRow, closedIds?: ReadonlySet<string>): boolean {
   const closed = closedIds instanceof Set ? closedIds : getVpClosedIssueIds();
@@ -119,25 +106,10 @@ export function isVpIssueStillOpen(issue: VPIssueRow, closedIds?: ReadonlySet<st
   return true;
 }
 
-/** Rebuild top alerts from open issues (matches backend cross-team + SLA ordering). */
+/** Rebuild top alerts from open issues — highest dollar exposure first. */
 export function buildVpTopAlerts(openIssues: VPIssueRow[]): VPIssueRow[] {
   const eligible = openIssues.filter((issue) => isVpIssueStillOpen(issue));
-  const crossTeam = [...eligible.filter(isVpCrossTeamIssue)].sort((a, b) => {
-    const ka = vpAlertSortKey(a);
-    const kb = vpAlertSortKey(b);
-    return ka[0] - kb[0] || ka[1] - kb[1] || ka[2] - kb[2];
-  });
-  const singleTeam = [...eligible.filter((i) => !isVpCrossTeamIssue(i))].sort((a, b) => {
-    const ka = vpAlertSortKey(a);
-    const kb = vpAlertSortKey(b);
-    return ka[0] - kb[0] || ka[1] - kb[1] || ka[2] - kb[2];
-  });
-  const combined = [...crossTeam, ...singleTeam].slice(0, VP_TOP_ALERTS_LIMIT);
-  return combined.sort((a, b) => {
-    const ka = vpAlertSortKey(a);
-    const kb = vpAlertSortKey(b);
-    return ka[0] - kb[0] || ka[1] - kb[1] || ka[2] - kb[2];
-  });
+  return sortByDollarDesc(eligible, (i) => i.dollar_exposure).slice(0, VP_TOP_ALERTS_LIMIT);
 }
 
 /** Portfolio headline KPIs derived from open issue rows (matches backend filters). */

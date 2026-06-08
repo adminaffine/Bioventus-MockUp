@@ -1,8 +1,18 @@
+import type { ExecutiveGaugeItem } from "../components/shared/ExecutiveGaugePanel";
 import type { CCODashboard, CCOIssue, CCOKpiKey, CCOMonthOnMonthRow } from "../services/api";
 import { resolveCcoAssigneeName } from "../config/ccoTeamOwners";
+import { EXECUTIVE_APPROVAL_CCO_ISSUE_ID } from "./executiveApprovalRecord";
 import { isCcoIssueResolved } from "./ccoWorkflowStorage";
 import { isHighValueRecordApproved } from "./highValueRecordSync";
 import { sortByDollarDesc } from "./personaKpiSort";
+import { buildResolutionTrendGauges } from "./executiveGaugeData";
+import { resolutionTrendStatusColor } from "./resolutionTrendChart";
+
+/** Static resolution-trend rows for penalty exposure and CAPA (unchanged from demo baseline). */
+const CCO_RESOLUTION_TREND_BASELINE: CCODashboard["compliance_trend"] = [
+  { kpi: "Regulatory Penalty Exposure", trend: "Up 9% vs last period", status: "Needs Attention" },
+  { kpi: "CAPA Resolution Rate", trend: "68% on-time closure rate vs target", status: "At Risk" },
+];
 
 export type { CCODashboard, CCOIssue, CCOKpiKey } from "../services/api";
 
@@ -35,8 +45,8 @@ export const CCO_KPI_CARD_META: Record<
     accent:
       "border-violet-300 dark:border-violet-700 hover:border-violet-400 bg-violet-50/50 dark:bg-violet-950/20",
     valueTone: "text-violet-700 dark:text-violet-300",
-    modalSubtitle: "Issues with the highest audit readiness impact",
-    emptyHint: "No audit readiness impact from open issues.",
+    modalSubtitle: "Each open issue reduces audit readiness by 2% — portfolio score = 100 − (open issues × 2)",
+    emptyHint: "No open issues reducing audit readiness.",
   },
   predicted_annual_risk: {
     accent:
@@ -225,9 +235,52 @@ export function buildCcoHighValueApprovalQueue(
 ): CCOIssue[] {
   const apiRows = (fromApi ?? []).filter(isCCOIssueOpen);
   const source = apiRows.length > 0 ? apiRows : openIssues.filter(isCCOIssueOpen);
+  const designated = source.find((i) => i.issue_id === EXECUTIVE_APPROVAL_CCO_ISSUE_ID);
+  if (designated) return [designated];
   return [...source]
     .sort((a, b) => b.penalty_exposure - a.penalty_exposure)
     .slice(0, limit);
+}
+
+function ccoTrendStatusForAudit(value: number): string {
+  return value >= 80 ? "Improving" : "Needs Attention";
+}
+
+/** Resolution trend API rows — baseline penalty/CAPA + live audit readiness from KPI cards. */
+export function buildCcoComplianceTrend(
+  kpiCards: CCODashboard["kpi_cards"],
+): CCODashboard["compliance_trend"] {
+  const audit = kpiCards.audit_readiness_score;
+  return [
+    ...CCO_RESOLUTION_TREND_BASELINE,
+    {
+      kpi: audit.label,
+      trend: audit.display,
+      status: ccoTrendStatusForAudit(audit.value),
+    },
+  ];
+}
+
+/** Resolution trend gauges — penalty/CAPA use demo baseline; audit matches KPI card. */
+export function buildCcoResolutionTrendGauges(
+  kpiCards: CCODashboard["kpi_cards"],
+): ExecutiveGaugeItem[] {
+  const audit = kpiCards.audit_readiness_score;
+  const auditStatus = ccoTrendStatusForAudit(audit.value);
+  const auditArc = Math.min(100, Math.max(0, audit.value));
+
+  return [
+    ...buildResolutionTrendGauges(CCO_RESOLUTION_TREND_BASELINE),
+    {
+      id: "audit_readiness_score",
+      label: audit.label,
+      percent: auditArc,
+      displayValue: audit.display,
+      subtitle: "Audit readiness score",
+      status: auditStatus,
+      color: resolutionTrendStatusColor(auditStatus),
+    },
+  ];
 }
 
 export function buildCcoMonthOnMonth(
@@ -270,9 +323,8 @@ export function filterOpenCCODashboard(dashboard: CCODashboard): CCODashboard {
   const totalExposure = all_open_issues.reduce((s, i) => s + i.penalty_exposure, 0);
   const annualized = Math.round(totalExposure * 43);
   const capaBreachCount = all_open_issues.filter((i) => i.capa_breach_risk === 1).length;
-  const auditValue = Math.max(0, 100 - all_open_issues.length * 2);
-  const auditDisplay =
-    auditValue < 80 ? `${auditValue}% — At Risk` : `${auditValue}%`;
+  const auditValue = ccoAuditReadinessScore(all_open_issues.length);
+  const auditDisplay = `${auditValue}%`;
   const kpi_cards = {
       ...dashboard.kpi_cards,
       regulatory_penalty_exposure: {
@@ -309,6 +361,7 @@ export function filterOpenCCODashboard(dashboard: CCODashboard): CCODashboard {
     high_value_approval_queue,
     all_open_issues,
     kpi_cards,
+    compliance_trend: buildCcoComplianceTrend(kpi_cards),
     month_on_month: buildCcoMonthOnMonth(kpi_cards, all_open_issues.length),
     risk_heatmap: buildCcoRiskHeatmap(all_open_issues).map((row) => ({
       issue_id: row.issueId,
@@ -379,12 +432,62 @@ export function sortTopAlerts(issues: CCOIssue[]): CCOIssue[] {
   });
 }
 
+const CCO_ANNUALIZATION_FACTOR = 43;
+/** Matches backend _audit_readiness_value — each open issue deducts this many points from 100%. */
+export const CCO_AUDIT_READINESS_DEDUCTION_PER_ISSUE = 2;
+
+export function ccoAuditReadinessScore(openCount: number): number {
+  return Math.max(0, 100 - openCount * CCO_AUDIT_READINESS_DEDUCTION_PER_ISSUE);
+}
+
+export function ccoKpiDrilldownMetricLabel(key: CCOKpiKey): string {
+  switch (key) {
+    case "regulatory_penalty_exposure":
+      return "Regulatory Penalty Exposure";
+    case "capa_breach_risk":
+      return "CAPA Breach Risk";
+    case "audit_readiness_score":
+      return "Contribution to Score";
+    case "predicted_annual_risk":
+      return "Annualized Regulatory Risk";
+  }
+}
+
+export function ccoKpiDrilldownMetricValue(issue: CCOIssue, key: CCOKpiKey): number {
+  switch (key) {
+    case "regulatory_penalty_exposure":
+      return issue.penalty_exposure;
+    case "capa_breach_risk":
+      return issue.capa_breach_risk;
+    case "audit_readiness_score":
+      return CCO_AUDIT_READINESS_DEDUCTION_PER_ISSUE;
+    case "predicted_annual_risk":
+      return issue.penalty_exposure * CCO_ANNUALIZATION_FACTOR;
+  }
+}
+
+export function formatCcoKpiDrilldownMetric(issue: CCOIssue, key: CCOKpiKey): string {
+  const value = ccoKpiDrilldownMetricValue(issue, key);
+  switch (key) {
+    case "capa_breach_risk":
+      return value === 1 ? "Yes" : "No";
+    case "audit_readiness_score":
+      return `−${CCO_AUDIT_READINESS_DEDUCTION_PER_ISSUE}%`;
+    case "regulatory_penalty_exposure":
+    case "predicted_annual_risk":
+      return money(value);
+  }
+}
+
 export function rowsForCcoKpi(key: CCOKpiKey, issues: CCOIssue[]): CCOIssue[] {
   let rows = issues;
   if (key === "capa_breach_risk") {
     rows = issues.filter((i) => i.capa_breach_risk === 1);
   }
-  return sortByDollarDesc(rows, (row) => row.penalty_exposure);
+  if (key === "audit_readiness_score") {
+    return sortTopAlerts(rows);
+  }
+  return sortByDollarDesc(rows, (row) => ccoKpiDrilldownMetricValue(row, key));
 }
 
 export function priorityClass(priority: string): string {

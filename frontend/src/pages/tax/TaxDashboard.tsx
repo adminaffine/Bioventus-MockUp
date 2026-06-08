@@ -86,17 +86,10 @@ function rowsForKpi(data: NonNullable<ReturnType<typeof useTaxWorkflow>["dashboa
 
 const PRIORITY_ORDER: Record<string, number> = { HIGH: 0, MEDIUM: 1, LOW: 2 };
 
-function buildMyActionRows(
-  myActionQueue: TaxIssueRow[],
-  aiQueue: TaxIssueRow[],
-): TaxIssueRow[] {
-  const byId = new Map<string, TaxIssueRow>();
-  for (const row of myActionQueue) byId.set(row.issue_id, row);
-  for (const row of aiQueue) {
-    const existing = byId.get(row.issue_id);
-    byId.set(row.issue_id, existing ? { ...existing, ...row } : row);
-  }
-  return [...byId.values()].sort((a, b) => {
+const LOGGED_IN_TAX_OWNER_ID = "TAX-03";
+
+function buildMyActionRows(myActionQueue: TaxIssueRow[]): TaxIssueRow[] {
+  return myActionQueue.filter((row) => row.owner_id === LOGGED_IN_TAX_OWNER_ID).sort((a, b) => {
     const pa = PRIORITY_ORDER[a.priority] ?? 9;
     const pb = PRIORITY_ORDER[b.priority] ?? 9;
     if (pa !== pb) return pa - pb;
@@ -234,7 +227,12 @@ export default function TaxDashboard() {
 
   const myActionRows = useMemo(() => {
     if (!data) return [];
-    return buildMyActionRows(data.my_action_queue, data.ai_queue);
+    return buildMyActionRows(data.my_action_queue);
+  }, [data]);
+
+  const topAlertsRows = useMemo(() => {
+    if (!data) return [];
+    return sortByDollarDesc(data.top_alerts, (row) => row.dollar_value);
   }, [data]);
 
   if (loading) {
@@ -260,7 +258,6 @@ export default function TaxDashboard() {
     id: row.issue_id,
     recordLabel: row.order_id,
     onRecordClick: () => navigate(`/tax/issue/${row.issue_id}`),
-    context: row.applied_jurisdiction,
     fix: row.ai_fix,
     confidence: row.ai_confidence,
     source: row.ai_source,
@@ -351,16 +348,15 @@ export default function TaxDashboard() {
 
       <section className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-6">
         <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">Top Alerts</h2>
-        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Highest-priority mismatches</p>
+        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Highest dollar exposure first</p>
         <div className="mt-4 overflow-x-auto">
-          <IssuesTable rows={data.top_alerts} onRowClick={(id) => navigate(`/tax/issue/${id}`)} />
+          <IssuesTable rows={topAlertsRows} onRowClick={(id) => navigate(`/tax/issue/${id}`)} />
         </div>
       </section>
 
       <AiRecommendationQueueSection
         rows={aiQueueRows}
         subtitle="High-confidence jurisdiction fixes awaiting review"
-        showContext
         showReject
         pendingId={aiActionPendingId}
         onApprove={(issueId) => void handleAiApprove(issueId)}

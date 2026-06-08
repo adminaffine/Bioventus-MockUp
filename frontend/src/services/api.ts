@@ -234,6 +234,7 @@ export interface TaxIssueDetail {
   workflow: TaxIssueWorkflow;
   header: Record<string, string | number>;
   what_happened: string;
+  what_went_wrong?: string;
   business_risk: { risk_type: string; status: string; detail: string }[];
   owner: { owner_id: string; owner_name: string; assigned_on: string; next_action: string; sla_remaining: string };
   ai_recommendation: { fix: string; confidence: number; source: string; order_id: string; correct_jurisdiction: string; decision?: "approve" | "reject" | null };

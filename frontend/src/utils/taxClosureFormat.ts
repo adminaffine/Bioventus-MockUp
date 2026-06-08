@@ -1,3 +1,24 @@
+import type { TaxClosure } from "../services/api";
+
+/** Cross-team notification owners for Tax closure (US English, distinct per team). */
+export const TAX_CROSS_TEAM_OWNERS: Record<string, string> = {
+  "Pricing Team": "David Chen",
+  "Credit & AR": "Ethan Walker",
+  "Data Steward": "Sophia Reed",
+  "SAP Team": "Marcus Hale",
+};
+
+export function patchTaxClosureCrossTeamOwners(closure: TaxClosure): TaxClosure {
+  if (!closure.cross_team_notifications?.length) return closure;
+  return {
+    ...closure,
+    cross_team_notifications: closure.cross_team_notifications.map((row) => ({
+      ...row,
+      owner: TAX_CROSS_TEAM_OWNERS[row.team] ?? row.owner,
+    })),
+  };
+}
+
 /** Money KPIs on Tax Closure impact table */
 const MONEY_KPI_KEYS = new Set([
   "compliance_exposure",

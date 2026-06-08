@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import KpiDrilldownModal from "../../components/shared/KpiDrilldownModal";
 import PersonaKpiCard, { formatPersonaKpiValue, PersonaKpiCardGrid } from "../../components/shared/PersonaKpiCard";
@@ -65,6 +65,11 @@ export default function StewardDashboard() {
     markStewardAiRejected(issueId);
     setAiDecisions((s) => ({ ...s, [issueId]: "rejected" }));
   };
+
+  const topAlertsRows = useMemo(() => {
+    if (!data) return [];
+    return sortByDollarDesc(data.top_alerts, (row) => row.dollar_value);
+  }, [data]);
 
   if (loading && !data) return <div className="text-sm text-slate-500">Loading...</div>;
   if (!data) return null;
@@ -248,7 +253,7 @@ export default function StewardDashboard() {
               </tr>
             </thead>
             <tbody>
-              {data.top_alerts.map((row) => (
+              {topAlertsRows.map((row) => (
                 <tr
                   key={row.issue_id}
                   onClick={() => navigate(`/steward/issue/${row.issue_id}`)}

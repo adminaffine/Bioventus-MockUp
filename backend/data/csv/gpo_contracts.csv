@@ -14,7 +14,7 @@ GPC-010,CUST-1005,PRD-010,neXus System,HealthTrust,Tier1,7650.0,8500.0,0.0,TRUE,
 GPC-013,CUST-1009,PRD-003,SUPARTZ FX 2.5mL,,,,650.0,,FALSE,,,,NO_GPO,ORD-020,FALSE,Orphan customer — no GPO membership. Paying list price $650 vs Vizient Tier3 $585. Missing $65/unit savings.
 GPC-014,CUST-1012,PRD-001,DUROLANE 3mL,CONFLICT,,,,850.0,,FALSE,,,,CONFLICT,ORD-023,TRUE
 GPC-015,CUST-1028,PRD-010,neXus System,HealthTrust,Tier1,7650.0,8500.0,0.0,TRUE,2024-01-01,2027-06-30,428,ACTIVE,ORD-008,FALSE,Compliant.
-GPC-016,CUST-1026,PRD-008,EXOGEN 4.0,Premier,Tier1,3780.0,4200.0,0.0,TRUE,2024-01-01,2025-09-14,0,RECALLED,ORD-015,TRUE,Product recalled 2025-09-15. This contract is now void. Order placed after recall = regulatory violation.
+GPC-016,CUST-1026,PRD-008,EXOGEN 4.0,Premier,Tier1,3780.0,4200.0,0.0,TRUE,2024-01-01,2025-09-14,0,RECALLED,ORD-048,TRUE,Product recalled 2025-09-15. This contract is now void. Order placed after recall = regulatory violation.
 GPC-017,CUST-1027,PRD-008,EXOGEN 4.0,Vizient,Tier2,3780.0,4200.0,0.0,TRUE,2024-01-01,2025-09-14,0,RECALLED,ORD-013,TRUE,Product recalled. Contract void. Order ORD-013 placed after recall.
 GPC-018,CUST-1002,PRD-010,neXus System,Premier,Tier1,7650.0,8500.0,0.0,TRUE,2024-01-01,2027-06-30,428,ACTIVE,,FALSE,Compliant. No orders yet in period.
 GPC-019,CUST-1006,PRD-002,GELSYN-3 6mL,Premier,Tier1,650.0,720.0,0.0,TRUE,2024-01-01,2027-06-30,428,ACTIVE,,FALSE,Compliant.

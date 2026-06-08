@@ -9,5 +9,5 @@ CERT-007,CUST-1016,Inactive One,Health System,EXPIRED,NC-EX-2021-0116,NC,2025-06
 CERT-008,CUST-1018,Inactive Three,Spine Center,EXPIRED,NC-EX-2021-0118,NC,2025-06-30,-302,501(c)(3) Non-Profit Hospital,0.0,,Cert expired. No recent orders but status must be corrected.
 CERT-009,CUST-1021,Pending One,Health System,MISSING,,NC,,,501(c)(3) Non-Profit Hospital,0.0,,No cert on file. Obtain before first order.
 CERT-010,CUST-1023,Pending One,Spine Center,MISSING,,NC,,,501(c)(3) Non-Profit Hospital,0.0,,No cert on file. Pending account.
-CERT-011,CUST-1026,Capital Institute,Health System,MISSING,,NC,,,501(c)(3) Non-Profit Hospital,5900.0,ORD-006|ORD-015,CRITICAL: No cert on file. Obtain cert and address recalled order.
+CERT-011,CUST-1026,Capital Institute,Health System,MISSING,,NC,,,501(c)(3) Non-Profit Hospital,5900.0,ORD-006|ORD-048,CRITICAL: No cert on file. Obtain cert and address recalled order.
 CERT-012,CUST-1028,East Center,Spine Center,MISSING,,NC,,,501(c)(3) Non-Profit Hospital,30500.0,ORD-008|ORD-014|ORD-030,CRITICAL: No cert on file. Highest risk customer for Tax team.

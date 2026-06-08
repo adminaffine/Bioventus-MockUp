@@ -565,6 +565,7 @@ def seed_tax_workflow_customers(conn):
         ("CUST-1087", "Riverside", "Clinic", "contact1087@bioventus-demo.com", "(602) 501-1087", "1976-01-01", "200 River Rd", "Phoenix", "AZ", "85002", "USA", "Spine Center", "Active", None, None, None, None, None, None, None, None, None, None),
         ("CUST-2011", "Northeast", "Medical", "contact2011@bioventus-demo.com", "(704) 502-2011", "1977-01-01", "450 NE Blvd", "Charlotte", "NC", "28201", "USA", "Health System", "Active", None, None, None, None, None, None, None, None, None, None),
         ("CUST-3042", "Valley", "Health", "contact3042@bioventus-demo.com", "(614) 503-3042", "1978-01-01", "30 Valley Dr", "Columbus", "OH", "43001", "USA", "Health System", "Active", None, None, None, None, None, None, None, None, None, None),
+        ("CUST-4019", "Alliance", "Health Group", "contact4019@bioventus-demo.com", "(312) 504-4019", "1979-01-01", "1200 Alliance Pkwy", "Chicago", "IL", "60601", "USA", "Health System", "Active", None, None, None, None, None, None, None, None, None, None),
     ]
     conn.executemany(
         "INSERT INTO customer_master VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
@@ -582,6 +583,10 @@ def patch_tax_workflow_sales_orders(conn):
         ("ORD-022", "CUST-2011", "PRD-003", "Exogen", "2026-04-05", None, 4, 2060.0, 8240.0, "REP-02", "Southeast", "Credit", "No", "Northeast Medical, 450 NE Blvd, Phoenix, AZ 85001", "James Liu", "7782", "jliu@nemedical.org", "55-3456789"),
         ("ORD-033", "CUST-0892", "PRD-001", "Exogen", "2026-04-02", None, 1, 3300.0, 3300.0, "REP-05", "Southeast", "Credit", "No", "Central Hospital, 88 South Ave, Phoenix, AZ 85001", "David Marsh", "4421", "dmarsh@central.org", "55-1234567"),
         ("ORD-034", "CUST-1087", "PRD-002", "Exogen", "2026-04-01", None, 1, 3300.0, 3300.0, "REP-03", "Southeast", "Credit", "No", "Riverside Clinic, 200 River Rd, Phoenix, AZ 85002", "Karen Fields", "3317", "kfields@riverside.org", "55-2345678"),
+        ("ORD-025", "CUST-3042", "PRD-002", "Exogen", "2026-03-27", "2026-03-31", 4, 3045.0, 12180.0, "REP-04", "Southeast", "Credit", "Yes", "Valley Health, 30 Valley Dr, Columbus, OH 43001", "Sara Patel", "5591", "spatel@valleyhealth.org", "55-4567890"),
+        ("ORD-028", "CUST-0892", "PRD-001", "Exogen", "2026-03-25", "2026-03-28", 20, 7800.0, 156000.0, "REP-05", "Southeast", "Credit", "Yes", "Central Hospital, 88 South Ave, Phoenix, AZ 85001", "David Marsh", "4421", "dmarsh@central.org", "55-1234567"),
+        ("ORD-029", "CUST-4019", "PRD-006", "TalisMann", "2026-03-28", "2026-04-02", 10, 14200.0, 142000.0, "REP-10", "Southeast", "Wire", "Yes", "1200 Alliance Pkwy, Chicago, IL 60601", "Mark Hill", "9494", "contact4019@bioventus-demo.com", "56-9363326"),
+        ("ORD-031", "CUST-2011", "PRD-001", "Exogen", "2026-04-05", None, 34, 835.29, 28400.0, "REP-02", "Southeast", "Credit", "No", "Northeast Medical, 450 NE Blvd, Charlotte, NC 28201", "James Liu", "7782", "jliu@nemedical.org", "55-3456789"),
     ]
     for row in updates:
         conn.execute(
@@ -597,6 +602,7 @@ def patch_tax_workflow_sales_orders(conn):
         ("ORD-035", "CUST-3042", "PRD-002", "Exogen", "2026-03-18", "2026-03-22", 1, 3300.0, 3300.0, "REP-04", "Southeast", "Credit", "Yes", "Valley Health, 30 Valley Dr, Phoenix, AZ 85001", "Sara Patel", "5591", "spatel@valleyhealth.org", "55-4567890"),
         ("ORD-036", "CUST-2011", "PRD-001", "Exogen", "2026-03-10", "2026-03-14", 1, 3300.0, 3300.0, "REP-02", "Southeast", "Credit", "Yes", "Northeast Medical, 450 NE Blvd, Phoenix, AZ 85001", "James Liu", "7782", "jliu@nemedical.org", "55-3456789"),
         ("ORD-037", "CUST-0892", "PRD-003", "Exogen", "2026-03-15", "2026-03-19", 1, 2160.0, 2160.0, "REP-05", "Southeast", "Credit", "Yes", "Central Hospital, 88 South Ave, Phoenix, AZ 85001", "David Marsh", "4421", "dmarsh@central.org", "55-1234567"),
+        ("ORD-048", "CUST-1026", "PRD-008", "EXOGEN 4.0", "2026-04-04", "2026-04-08", 1, 4200.0, 4200.0, "REP-03", "Southeast", "Credit", "Yes", "Capital Institute, 100 Capital Blvd, Raleigh, NC 27601", "Aaron Reese", "5375", "elliskeith@example.org", "80-3198037"),
     ]
     conn.executemany(
         """INSERT INTO sales_orders VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
@@ -805,9 +811,9 @@ def seed_chargeback_disputes(conn):
         ("CHB-007", "GPC-007", "ORD-007", "CUST-1027", "Triad Specialists", "GELSYN-3 6mL", "Vizient", "Tier2", 70.00, 2, 140.00, "TRUE", "Resolved", None, "2026-01-15", 0, "Resolved Q1 2026. Credit memo issued.", "Prior period dispute resolved. $140 credit issued."),
         ("CHB-008", "GPC-008", "ORD-003", "CUST-1003", "Raleigh Clinic", "SUPARTZ FX 2.5mL", "Vizient", "Tier3", 65.00, 2, 130.00, "TRUE", "Settled", None, "2026-01-20", 0, "Settled at 50% — $65 credit issued. Vizient agreed partial settlement.", "Partial settlement. $65 of $130 recovered."),
         ("CHB-009", "GPC-009", "ORD-004", "CUST-1004", "Triangle System", "EXOGEN Lite", "Vizient", "Tier2", 90.00, 2, 180.00, "TRUE", "Resolved", None, "2026-02-01", 0, "Resolved. Full credit $180 issued to CUST-1004.", "Prior period resolved. Demonstrates workflow effectiveness."),
-        ("CHB-010", None, "ORD-031", "CUST-1010", "Sandhills Center", "GELSYN-3 6mL", None, None, None, 2, 1440.00, "FALSE", "Under Review", 30, "2026-04-01", 1, "Distributor ordered GELSYN-3 without active GPO contract. Full order value $1,440 is off-contract. Enroll CUST-1010 in Vizient or issue list-price invoice.", "Off-contract distributor order. No GPO enrolled. $1,440 exposure."),
-        ("CHB-011", None, "ORD-032", "CUST-1015", "Bluewater Distribution", "DUROLANE 3mL", None, None, None, 3, 2550.00, "FALSE", "Under Review", 30, "2026-04-03", 1, "Distributor ordered DUROLANE without GPO contract. $2,550 off-contract. Enroll in Premier or enforce list price.", "Off-contract distributor order. $2,550 exposure."),
-        ("CHB-012", None, "ORD-033", "CUST-1020", "Inactive Five", "SUPARTZ FX 2.5mL", None, None, None, 4, 2600.00, "FALSE", "Blocked", None, "2026-04-05", 1, "INACTIVE distributor placed order. Revenue recognition blocked. Off-contract AND inactive account — dual violation.", "Order from INACTIVE distributor. Blocked. $2,600 unrecognizable revenue."),
+        ("CHB-010", None, "ORD-031", "CUST-2011", "Northeast Medical", "Exogen", None, None, None, 34, 28400.00, "FALSE", "Under Review", 30, "2026-04-05", 1, "List price applied on ORD-031 — GPO Tier-2 rate not refreshed. Jurisdiction mismatch blocks invoice until corrected.", "Tax + pricing override on Northeast Medical — $28,400 exposure."),
+        ("CHB-011", None, "ORD-025", "CUST-3042", "Valley Health", "Exogen", None, None, None, 4, 12180.00, "FALSE", "Under Review", 30, "2026-03-27", 1, "GPO contract non-compliance flagged on ORD-025 — audit review required for Valley Health.", "GPO audit flag — $12,180 contract reconciliation exposure."),
+        ("CHB-012", None, "ORD-033", "CUST-0892", "Central Hospital", "Exogen", None, None, None, 1, 3300.00, "FALSE", "Under Review", 30, "2026-04-02", 1, "Tax jurisdiction mismatch on ORD-033 — Illinois ship-to vs Missouri bill-to.", "Jurisdiction correction required before invoicing — $3,300 exposure."),
     ]
     conn.executemany("INSERT INTO chargeback_disputes VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", rows)
 
@@ -823,7 +829,7 @@ def seed_sla_tickets(conn):
         ("SLA-007", "GPC-011", "gpo_contracts", "/revenue", "tab=market-access&highlight=GPC-011", "Market Access", "Market Access Team", "Contract renewal initiated 30 days before expiry", 30, "days", 28, "days", "ON TRACK", None, 14000.00, "Initiate Premier renewal for TalisMann GPC-011. 2 days remaining in SLA window.", 0),
         ("SLA-008", "GPC-012", "gpo_contracts", "/revenue", "tab=market-access&highlight=GPC-012", "Market Access", "Market Access Team", "Contract renewal initiated 30 days before expiry", 30, "days", 28, "days", "ON TRACK", None, 13500.00, "Initiate Premier renewal for StimTrial GPC-012. 2 days remaining in SLA window.", 0),
         ("SLA-009", "CHB-003", "chargeback_disputes", "/revenue", "tab=market-access&highlight=CHB-003", "Market Access", "Market Access Team", "Chargeback dispute filed before expiry date", 90, "days", 12, "days", "AT RISK", "HIGH", 1200.00, "File CHB-003 StimRouter dispute before 12-day expiry. Validate HealthTrust membership FIRST.", 0),
-        ("SLA-010", "ALT-017", "alerts_queue", "/profiler", "dataset=sales_orders&filter=ghost_rep", "Commercial Ops", "Linda Torres", "Ghost rep resolution within 48 hours of detection", 48, "hours", 96, "hours", "BREACHED", "HIGH", 6800.00, "Identify GHOST-REP-99. Re-attribute ORD-025 to ORD-028. Adjust commission. 48 hours over SLA.", 1),
+        ("SLA-010", "ALT-017", "alerts_queue", "/profiler", "dataset=sales_orders&filter=ghost_rep", "Commercial Ops", "Linda Torres", "Ghost rep resolution within 48 hours of detection", 48, "hours", 96, "hours", "BREACHED", "HIGH", 6800.00, "Identify GHOST-REP-99. Re-attribute ORD-025 through ORD-027. Adjust commission. 48 hours over SLA.", 1),
     ]
     conn.executemany("INSERT INTO sla_tickets VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", rows)
 
@@ -849,7 +855,7 @@ def seed_dso_analysis(conn):
         ("DSO-003", "ORD-011", "CUST-9903", "Unknown Customer (Orphan)", "DUROLANE 3mL", 850, "PO", 42, 30, 12, "Orphan customer — no billing contact in master", 850, "Restore customer master record to enable invoicing."),
         ("DSO-004", "ORD-012", "CUST-9904", "Unknown Customer (Orphan)", "StimRouter", 12000, "PO", 42, 30, 12, "Orphan customer — no billing contact in master", 12000, "$12,000 blocked. Second-largest DSO risk item after DSO-002."),
         ("DSO-005", "ORD-027", "CUST-1016", "Inactive One", "DUROLANE 3mL", 1700, "Net30", 35, 30, 5, "Inactive account — collection process uncertain", 1700, "Account marked Inactive. Confirm collection status with Finance. May require write-off process."),
-        ("DSO-006", "ORD-028", "CUST-1017", "Inactive Two", "DUROLANE 3mL", 1700, "Net30", 35, 30, 5, "Inactive account — collection process uncertain", 1700, "Inactive account DSO risk. Confirm with Finance whether to collect or write off."),
+        ("DSO-006", "ORD-027", "CUST-1016", "Inactive One", "DUROLANE 3mL", 1700, "Net30", 35, 30, 5, "Inactive account — collection process uncertain", 1700, "Inactive account DSO risk. Confirm with Finance whether to collect or write off."),
     ]
     conn.executemany("INSERT INTO dso_analysis VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)", rows)
 

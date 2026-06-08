@@ -4,6 +4,7 @@ import type {
   CFOKpiPeriodRow,
   CFORiskHeatmapRow,
 } from "../services/api";
+import { EXECUTIVE_APPROVAL_CFO_ALERT_ID } from "./executiveApprovalRecord";
 import { isCfoAlertResolved } from "./cfoWorkflowStorage";
 import { isHighValueRecordApproved } from "./highValueRecordSync";
 import { sortByDollarDesc } from "./personaKpiSort";
@@ -78,6 +79,8 @@ export function buildCfoHighValueApprovalQueue(
 ): CFOAlert[] {
   const apiRows = (fromApi ?? []).filter(isCfoAlertOpen);
   const source = apiRows.length > 0 ? apiRows : openAlerts.filter(isCfoAlertOpen);
+  const designated = source.find((a) => a.alert_id === EXECUTIVE_APPROVAL_CFO_ALERT_ID);
+  if (designated) return [designated];
   return [...source]
     .sort((a, b) => b.dollar_exposure - a.dollar_exposure)
     .slice(0, limit);
@@ -492,9 +495,36 @@ export function alertRowSubline(a: CFOAlert): string {
   return `${a.account_id} · ${a.order_id} · SLA ${a.sla_days_remaining}d`;
 }
 
+const CFO_ANNUALIZATION_FACTOR = 30.5;
+
+export function cfoKpiDrilldownMetricLabel(key: CFOKpiKey): string {
+  switch (key) {
+    case "revenue_at_risk":
+      return "Revenue at Risk";
+    case "margin_at_risk":
+      return "Margin at Risk";
+    case "compliance_exposure":
+      return "Compliance Exposure";
+    case "predicted_annual_exposure":
+      return "Annualized Exposure";
+  }
+}
+
+export function cfoKpiDrilldownMetricValue(alert: CFOAlert, key: CFOKpiKey): number {
+  switch (key) {
+    case "revenue_at_risk":
+      return alert.dollar_exposure;
+    case "margin_at_risk":
+      return alert.margin_at_risk;
+    case "compliance_exposure":
+      return alert.penalty_exposure;
+    case "predicted_annual_exposure":
+      return alert.dollar_exposure * CFO_ANNUALIZATION_FACTOR;
+  }
+}
+
 export function rowsForCfoKpi(key: CFOKpiKey, alerts: CFOAlert[]): CFOAlert[] {
-  void key;
-  return sortByDollarDesc(alerts, (row) => row.dollar_exposure);
+  return sortByDollarDesc(alerts, (row) => cfoKpiDrilldownMetricValue(row, key));
 }
 
 export function priorityClass(priority: string): string {

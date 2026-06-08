@@ -1,5 +1,6 @@
 import type { PricingClosure, PricingDashboard, PricingIssueRow } from "../services/api";
 import { isHighValueRecordApproved } from "./highValueRecordSync";
+import { sortByDollarDesc } from "./personaKpiSort";
 
 const CONFLICT_TYPES = new Set([
   "GPO Pricing Conflict",
@@ -164,7 +165,7 @@ export function syncPricingDashboardKpis(dashboard: PricingDashboard): PricingDa
   return {
     ...dashboard,
     all_open_issues,
-    top_alerts: filterOpenRows(dashboard.top_alerts),
+    top_alerts: sortByDollarDesc(filterOpenRows(dashboard.top_alerts), (row) => row.dollar_value),
     ai_queue: filterOpenRows(dashboard.ai_queue),
     my_action_queue: filterOpenRows(dashboard.my_action_queue),
     kpi_cards,

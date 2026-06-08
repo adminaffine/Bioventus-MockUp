@@ -11,8 +11,8 @@ const PERCENT_KPI_KEYS = new Set(["gpo_mapping_accuracy", "contract_data_complet
 export const PRICING_KPI_DISPLAY_LABELS: Record<string, string> = {
   active_conflicts: "GPO Conflicts (Dashboard Header)",
   expiring_contracts: "Contracts Expiring / Recalled (Dashboard Header)",
-  expiring_contracts_kpi: "Expiring Contracts (KPI Card)",
-  product_recalls: "Product Recalls (KPI Card)",
+  expiring_contracts_kpi: "Expiring Contracts",
+  product_recalls: "Product Recalls",
   gpo_conflicts: "GPO Pricing Conflicts",
   gpo_mapping_accuracy: "GPO Mapping Accuracy",
   contract_data_completeness: "Contract Data Completeness",

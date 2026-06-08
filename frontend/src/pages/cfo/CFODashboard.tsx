@@ -27,6 +27,8 @@ import {
   CFO_KPI_ORDER,
   CFO_MONTH_ON_MONTH_SERIES,
   DEFAULT_CFO_RESOLUTION_TREND,
+  cfoKpiDrilldownMetricLabel,
+  cfoKpiDrilldownMetricValue,
   rowsForCfoKpi,
   type CFOHeatmapBarRow,
   type CFOKpiKey,
@@ -255,10 +257,7 @@ export default function CFODashboard() {
                 <th className="py-2 pr-4">Account</th>
                 <th className="py-2 pr-4">Issue Type</th>
                 <th className="py-2 pr-4">Priority</th>
-                <th className="py-2 pr-4">Exposure</th>
-                <th className="py-2 pr-4">Margin</th>
-                <th className="py-2 pr-4">Penalty</th>
-                <th className="py-2 pr-4">Invoice</th>
+                <th className="py-2 pr-4">{cfoKpiDrilldownMetricLabel(kpiModalKey)}</th>
               </tr>
             </thead>
             <tbody>
@@ -271,10 +270,7 @@ export default function CFODashboard() {
                   <td className="py-2 pr-4">{a.account_name}</td>
                   <td className="py-2 pr-4">{a.issue_type}</td>
                   <td className="py-2 pr-4">{a.priority}</td>
-                  <td className="py-2 pr-4">{money(a.dollar_exposure)}</td>
-                  <td className="py-2 pr-4">{money(a.margin_at_risk)}</td>
-                  <td className="py-2 pr-4">{money(a.penalty_exposure)}</td>
-                  <td className="py-2 pr-4">{a.invoice_status}</td>
+                  <td className="py-2 pr-4">{money(cfoKpiDrilldownMetricValue(a, kpiModalKey))}</td>
                 </tr>
               ))}
             </tbody>

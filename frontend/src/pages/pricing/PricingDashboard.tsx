@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import KpiDrilldownModal from "../../components/shared/KpiDrilldownModal";
 import PersonaKpiCard, { formatPersonaKpiValue, PersonaKpiCardGrid } from "../../components/shared/PersonaKpiCard";
@@ -72,14 +72,6 @@ function rowsForFilter(
       ? (row: PricingIssueRow) => rowAnnualizedExposure(row)
       : (row: PricingIssueRow) => displayIssueValue(row);
   return sortByDollarDesc(rows, dollarPick);
-}
-
-function displayTopAlertInvoiceStatus(row: PricingIssueRow): string {
-  const status = (row.invoice_status || "").trim();
-  if (row.issue_type === "Contract Expiring") return status || "—";
-  if (status === "Invoiced" || status === "Post-Invoice") return "Invoiced";
-  if (row.order_id) return "Invoiced";
-  return status || "—";
 }
 
 function KpiIssuesTable({
@@ -169,6 +161,11 @@ export default function PricingDashboard() {
     const closure = await resolveIssue(issueId);
     navigate(`/pricing/closure/${issueId}`, { state: { closure } });
   };
+
+  const topAlertsRows = useMemo(() => {
+    if (!data) return [];
+    return sortByDollarDesc(data.top_alerts, (row) => displayIssueValue(row));
+  }, [data]);
 
   if (loading && !data) return <div className="text-sm text-slate-500 dark:text-slate-400">Loading...</div>;
   if (!data) return null;
@@ -293,12 +290,11 @@ export default function PricingDashboard() {
                 <th className="py-2 pr-4">Issue Type</th>
                 <th className="py-2 pr-4">Priority</th>
                 <th className="py-2 pr-4">$ Value</th>
-                <th className="py-2 pr-4">Invoice Status</th>
                 <th className="py-2 pr-4">Owner</th>
               </tr>
             </thead>
             <tbody>
-              {data.top_alerts.map((row) => (
+              {topAlertsRows.map((row) => (
                 <tr
                   key={row.issue_id}
                   onClick={() => navigate(`/pricing/issue/${row.issue_id}`)}
@@ -311,7 +307,6 @@ export default function PricingDashboard() {
                     <span className={`text-xs px-2 py-0.5 rounded ${priorityClass(row.priority)}`}>{row.priority}</span>
                   </td>
                   <td className="py-2 pr-4">{formatMoney(displayIssueValue(row))}</td>
-                  <td className="py-2 pr-4">{displayTopAlertInvoiceStatus(row)}</td>
                   <td className="py-2 pr-4">{row.owner_name}</td>
                 </tr>
               ))}

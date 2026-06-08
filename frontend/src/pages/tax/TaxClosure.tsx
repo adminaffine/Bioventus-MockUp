@@ -10,6 +10,7 @@ import {
   closureKpiRows,
   formatClosureKpiValue,
   KPI_DISPLAY_LABELS,
+  patchTaxClosureCrossTeamOwners,
 } from "../../utils/taxClosureFormat";
 import { isTaxAiRejected } from "../../utils/taxWorkflowStorage";
 
@@ -25,7 +26,9 @@ export default function TaxClosure() {
   const location = useLocation();
   const closureFromNav = (location.state as TaxClosureLocationState | null)?.closure;
   const { resolveIssue, refreshDashboard, dashboard, dashboardRevision } = useTaxWorkflow();
-  const [data, setClosure] = useState<TaxClosureData | null>(closureFromNav ?? null);
+  const [data, setClosure] = useState<TaxClosureData | null>(
+    closureFromNav ? patchTaxClosureCrossTeamOwners(closureFromNav) : null,
+  );
   const [resolvedIssue, setResolvedIssue] = useState<TaxIssueRow | null>(null);
   const [loading, setLoading] = useState(!closureFromNav);
   const [error, setError] = useState<string | null>(null);
@@ -33,7 +36,7 @@ export default function TaxClosure() {
   useEffect(() => {
     if (!issueId) return;
     if (closureFromNav) {
-      setClosure(closureFromNav);
+      setClosure(patchTaxClosureCrossTeamOwners(closureFromNav));
       setLoading(false);
       setError(null);
       return;
@@ -41,7 +44,7 @@ export default function TaxClosure() {
     setLoading(true);
     setError(null);
     resolveIssue(issueId)
-      .then(setClosure)
+      .then((closure) => setClosure(patchTaxClosureCrossTeamOwners(closure)))
       .catch((err) => {
         const msg = err instanceof Error ? err.message : String(err);
         if (msg.includes("manual") || msg.includes("Approve the AI")) {

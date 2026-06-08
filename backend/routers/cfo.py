@@ -9,6 +9,9 @@ router = APIRouter(prefix="/api/cfo", tags=["cfo"])
 
 DB_PATH = Path(__file__).resolve().parent.parent / "data" / "luminos_demo.db"
 
+# CFO executive approval: Alliance Health / ORD-029 ($142K) — not the CCO $156K cluster.
+EXECUTIVE_APPROVAL_CFO_ALERT_ID = "CFO-ALERT-002"
+
 _session_issue_overrides: dict[str, dict[str, dict]] = {}
 _initialized_cfo_sessions: set[str] = set()
 
@@ -98,8 +101,14 @@ def _ai_eligible_for_cfo_queue(alert: dict) -> bool:
 
 
 def _build_high_value_approval_queue(open_alerts: list[dict], limit: int = 1) -> list[dict]:
-    """Open alerts ranked by dollar exposure — executive approval queue (highest $ first)."""
+    """CFO executive approval — always the designated $142K chargeback (ORD-029)."""
     pending = [a for a in open_alerts if _is_open_alert(a)]
+    designated = next(
+        (a for a in pending if a.get("alert_id") == EXECUTIVE_APPROVAL_CFO_ALERT_ID),
+        None,
+    )
+    if designated:
+        return [designated]
     return sorted(pending, key=lambda x: -float(x.get("dollar_exposure", 0) or 0))[:limit]
 
 
@@ -611,10 +620,7 @@ def _build_dashboard(all_alerts: list[dict]) -> dict:
 
     top_alerts = sorted(
         [a for a in open_alerts if _is_open_alert(a)],
-        key=lambda x: (
-            _PRIORITY_ORDER.get(x.get("priority"), 9),
-            int(x.get("sla_days_remaining") or 0),
-        ),
+        key=lambda x: -float(x.get("dollar_exposure", 0) or 0),
     )[:8]
 
     ai_queue = _build_cfo_ai_queue(open_alerts)

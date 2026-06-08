@@ -12,6 +12,7 @@ DB_PATH = Path(__file__).resolve().parent.parent / "data" / "luminos_demo.db"
 _session_issue_overrides: dict[str, dict[str, dict]] = {}
 
 LOGGED_IN_PRICING_OWNER = {"owner_id": "REP-03", "owner_name": "Jennifer Mills"}
+PRICING_AI_QUEUE_LIMIT = 3
 PRICING_TEAM_OWNERS = [
     {"owner_id": "REP-05", "owner_name": "Marcus Johnson"},
     {"owner_id": "REP-03", "owner_name": "Jennifer Mills"},
@@ -275,6 +276,23 @@ def _ai_eligible_for_queue(issue: dict) -> bool:
     return float(issue.get("ai_confidence", 0)) >= 89 and issue.get("ai_decision") != "approve"
 
 
+def _build_ai_queue(open_issues: list[dict]) -> list[dict]:
+    """Top high-confidence fixes for the logged-in pricing owner (AI Recommendation section)."""
+    priority_order = {"CRITICAL": 0, "HIGH": 1, "MEDIUM": 2, "LOW": 3}
+    return sorted(
+        [
+            i
+            for i in open_issues
+            if i.get("owner_id") == LOGGED_IN_PRICING_OWNER["owner_id"] and _ai_eligible_for_queue(i)
+        ],
+        key=lambda x: (
+            -float(x.get("ai_confidence", 0)),
+            priority_order.get(x.get("priority", "LOW"), 9),
+            x.get("sla_days_remaining", 99),
+        ),
+    )[:PRICING_AI_QUEUE_LIMIT]
+
+
 def _is_no_gpo_membership(issue: dict) -> bool:
     return str(issue.get("issue_type") or "").strip().lower() == "no gpo membership"
 
@@ -295,45 +313,17 @@ def _build_dashboard_payload(session_id: str) -> dict:
     def _priority_sort_key(issue: dict) -> tuple:
         return (priority_order.get(issue.get("priority", "LOW"), 9), -float(issue.get("dollar_value", 0)))
 
-    portfolio_sorted = sorted(open_issues, key=_priority_sort_key)
+    def _dollar_sort_key(issue: dict) -> float:
+        return -float(issue.get("dollar_value", 0) or 0)
+
+    portfolio_sorted = sorted(open_issues, key=_dollar_sort_key)
     my_queue = [i for i in open_issues if i.get("owner_id") == LOGGED_IN_PRICING_OWNER["owner_id"]]
     my_sorted = sorted(my_queue, key=_priority_sort_key)
 
-    # Top Alerts: AI-eligible rows first, then other high-priority issues (5–8 records).
-    top_alerts: list[dict] = []
-    seen: set[str] = set()
-    for issue in portfolio_sorted:
-        if not _ai_eligible_for_queue(issue):
-            continue
-        top_alerts.append(issue)
-        seen.add(issue["issue_id"])
-        if len(top_alerts) >= 8:
-            break
-    for issue in portfolio_sorted:
-        if len(top_alerts) >= 8:
-            break
-        if issue["issue_id"] in seen:
-            continue
-        top_alerts.append(issue)
-        seen.add(issue["issue_id"])
     target_count = min(8, max(5, len(portfolio_sorted)))
-    while len(top_alerts) < target_count:
-        added = False
-        for issue in portfolio_sorted:
-            if issue["issue_id"] in seen:
-                continue
-            top_alerts.append(issue)
-            seen.add(issue["issue_id"])
-            added = True
-            break
-        if not added:
-            break
+    top_alerts = portfolio_sorted[:target_count]
 
-    ai_queue = [
-        i
-        for i in top_alerts
-        if i.get("owner_id") == LOGGED_IN_PRICING_OWNER["owner_id"] and _ai_eligible_for_queue(i)
-    ]
+    ai_queue = _build_ai_queue(open_issues)
     my_action_queue = my_sorted[:8]
 
     return {

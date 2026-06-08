@@ -15,6 +15,15 @@ DB_PATH = Path(__file__).resolve().parent.parent / "data" / "luminos_demo.db"
 _session_issue_overrides: dict[str, dict[str, dict]] = {}
 
 LOGGED_IN_TAX_OWNER = {"owner_id": "TAX-03", "owner_name": "Jennifer Mills"}
+TAX_AI_QUEUE_LIMIT = 3
+TAX_AI_CONFIDENCE_MIN = 89
+
+TAX_CROSS_TEAM_OWNERS = {
+    "Pricing Team": "David Chen",
+    "Credit & AR": "Ethan Walker",
+    "Data Steward": "Sophia Reed",
+    "SAP Team": "Marcus Hale",
+}
 
 TAX_TEAM_OWNERS = [
     {"owner_id": "TAX-03", "owner_name": "Jennifer Mills"},
@@ -46,6 +55,19 @@ def _connect():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
+
+
+def _what_went_wrong_text(issue: dict, product_name: str | None = None) -> str:
+    """Per-record narrative from seed data — unique root_cause per issue."""
+    root_cause = (issue.get("root_cause") or "").strip()
+    if root_cause:
+        return root_cause
+    product = product_name or issue.get("product") or "Product"
+    return (
+        f"{product} on {issue['order_id']} was taxed under {issue['applied_jurisdiction']} "
+        f"instead of {issue['correct_jurisdiction']} (ship-to {issue['ship_to_state']}, "
+        f"bill-to {issue['bill_to_state']}) — ${float(issue.get('dollar_value') or 0):,.2f} exposure."
+    )
 
 
 def _merge_issue(issue: dict, session_id: str) -> dict:
@@ -171,26 +193,35 @@ def _data_quality_health(metrics: dict) -> list[dict]:
     ]
 
 
-def _owner_with_most_open_issues(open_issues: list[dict]) -> dict:
-    counts: dict[str, int] = {}
-    owner_name_by_id: dict[str, str] = {}
-    for issue in open_issues:
-        owner_id = str(issue.get("owner_id") or "").strip()
-        owner_name = str(issue.get("owner_name") or "").strip()
-        if owner_id in ("", "Unassigned"):
-            continue
-        counts[owner_id] = counts.get(owner_id, 0) + 1
-        if owner_name:
-            owner_name_by_id[owner_id] = owner_name
-    if not counts:
-        return LOGGED_IN_TAX_OWNER
-    max_count = max(counts.values())
-    candidate_ids = [owner_id for owner_id, count in counts.items() if count == max_count]
-    chosen_id = sorted(candidate_ids)[0]
-    return {
-        "owner_id": chosen_id,
-        "owner_name": owner_name_by_id.get(chosen_id, LOGGED_IN_TAX_OWNER["owner_name"]),
-    }
+def _ai_eligible_for_queue(issue: dict) -> bool:
+    return (
+        float(issue.get("ai_confidence", 0)) >= TAX_AI_CONFIDENCE_MIN
+        and issue.get("ai_decision") != "approve"
+    )
+
+
+def _sort_top_alerts(issues: list[dict]) -> list[dict]:
+    """Top Alerts table — highest dollar exposure first."""
+    return sorted(
+        issues,
+        key=lambda x: (
+            -float(x.get("dollar_value") or 0),
+            {"HIGH": 0, "MEDIUM": 1, "LOW": 2}.get(str(x.get("priority") or "LOW"), 9),
+            x.get("sla_days_remaining", 99),
+        ),
+    )
+
+
+def _build_ai_queue(open_issues: list[dict]) -> list[dict]:
+    """Top high-confidence jurisdiction fixes for the dashboard AI Recommendation section."""
+    return sorted(
+        [i for i in open_issues if _ai_eligible_for_queue(i)],
+        key=lambda x: (
+            -float(x.get("ai_confidence", 0)),
+            {"HIGH": 0, "MEDIUM": 1, "LOW": 2}.get(str(x.get("priority") or "LOW"), 9),
+            x.get("sla_days_remaining", 99),
+        ),
+    )[:TAX_AI_QUEUE_LIMIT]
 
 
 def _kpi_impact_snapshot(before: dict, after: dict) -> dict:
@@ -244,12 +275,7 @@ def _kpi_impact_snapshot(before: dict, after: dict) -> dict:
 
 def _build_closure_payload(issue: dict, metrics_before: dict, metrics_after: dict) -> dict:
     today = datetime.date.today().isoformat()
-    team_owner = {
-        "Pricing Team": "Olivia Bennett",
-        "Credit & AR": "Ethan Walker",
-        "Data Steward": "Sophia Reed",
-        "SAP Team": "Oliver Bennett",
-    }
+    team_owner = TAX_CROSS_TEAM_OWNERS
     return {
         "resolution_confirmation": {
             "issue": f"Tax Jurisdiction Mismatch — {issue['order_id']}",
@@ -314,48 +340,37 @@ def _build_closure_payload(issue: dict, metrics_before: dict, metrics_after: dic
     }
 
 
+def _closure_from_snapshot(session_id: str, issue: dict) -> dict | None:
+    """Rebuild closure from stored KPI metrics so copy updates (e.g. owner names) stay current."""
+    snapshot = _session_overrides(session_id).get(issue["issue_id"], {}).get("closure_snapshot")
+    if not snapshot:
+        return None
+    return _build_closure_payload(
+        issue,
+        snapshot.get("metrics_before", _compute_metrics([])),
+        snapshot.get("metrics_after", _compute_metrics([])),
+    )
+
+
 def _build_dashboard_payload(session_id: str) -> dict:
     issues = _load_issues(session_id)
     open_issues = [i for i in issues if i.get("status") == "Open"]
     metrics = _compute_metrics(open_issues)
-    focus_owner = _owner_with_most_open_issues(open_issues)
-
-    sorted_alerts_all = sorted(
-        open_issues,
-        key=lambda x: (
-            0 if int(x.get("pre_invoice") or 0) == 1 else 1,
-            {"HIGH": 0, "MEDIUM": 1, "LOW": 2}.get(str(x.get("priority") or "LOW"), 9),
-            x.get("sla_days_remaining", 99),
-        ),
-    )
+    sorted_alerts_all = _sort_top_alerts(open_issues)
     target_count = min(8, max(5, len(sorted_alerts_all)))
+    sorted_alerts = copy.deepcopy(sorted_alerts_all[:target_count])
     overrides = _session_overrides(session_id)
     dashboard_state = overrides.setdefault("__dashboard__", {})
-    snapshot = dashboard_state.get("top_alert_snapshot")
-    if isinstance(snapshot, list) and snapshot:
-        sorted_alerts = copy.deepcopy(snapshot)
-    else:
-        sorted_alerts = copy.deepcopy(sorted_alerts_all[:target_count])
-        dashboard_state["top_alert_snapshot"] = copy.deepcopy(sorted_alerts)
+    dashboard_state["top_alert_snapshot"] = copy.deepcopy(sorted_alerts)
 
-    ai_queue = [
-        i
-        for i in open_issues
-        if i.get("owner_id") == focus_owner["owner_id"]
-        and float(i.get("ai_confidence", 0)) >= 89
-        and i.get("ai_decision") != "approve"
-    ]
+    ai_queue = _build_ai_queue(open_issues)
     my_queue = sorted(
-        [i for i in open_issues if i.get("owner_id") == focus_owner["owner_id"]],
+        [i for i in open_issues if i.get("owner_id") == LOGGED_IN_TAX_OWNER["owner_id"]],
         key=lambda x: (
             {"HIGH": 0, "MEDIUM": 1, "LOW": 2}.get(str(x.get("priority") or "LOW"), 9),
             x.get("sla_days_remaining", 99),
         ),
     )
-    my_by_id = {i["issue_id"]: i for i in my_queue}
-    for issue in ai_queue:
-        my_by_id[issue["issue_id"]] = issue
-    my_queue = list(my_by_id.values())
 
     return {
         "headline": metrics["headline"],
@@ -508,17 +523,10 @@ def tax_resolve(body: TaxResolveBody, session_id: str = Depends(get_tax_demo_ses
 
     overrides = _session_overrides(session_id)
     if issue.get("status") == "Resolved":
-        snapshot = overrides.get(body.issue_id, {}).get("closure_snapshot")
-        if snapshot:
-            closure = _build_closure_payload(
-                issue,
-                snapshot.get("metrics_before", _compute_metrics([])),
-                snapshot.get("metrics_after", _compute_metrics([])),
-            )
-            overrides[body.issue_id]["closure_snapshot"] = {
-                **snapshot,
-                "closure": closure,
-            }
+        closure = _closure_from_snapshot(session_id, issue)
+        if closure:
+            snapshot = overrides.get(body.issue_id, {}).get("closure_snapshot", {})
+            overrides[body.issue_id]["closure_snapshot"] = {**snapshot, "closure": closure}
             return {
                 "ok": True,
                 "issue_id": body.issue_id,
@@ -573,18 +581,8 @@ def tax_issue(issue_id: str, session_id: str = Depends(get_tax_demo_session)):
             "opened_on": issue["opened_date"],
             "sla": f"{issue['sla_days_remaining']} days remaining  │  {'pre-invoice' if issue['pre_invoice'] else 'post-invoice'}",
         },
-        "what_happened": (
-            f"Order {issue['order_id']} for {issue['customer_name']} is scheduled to be invoiced in "
-            f"{issue['sla_days_remaining']} days. The ship-to address is {issue['correct_jurisdiction']} "
-            f"but the system has applied {issue['applied_jurisdiction']} tax jurisdiction — "
-            f"tax exposure of ${issue['dollar_value']:,.2f} if invoiced as-is."
-        )
-        if issue["pre_invoice"]
-        else (
-            f"Order {issue['order_id']} for {issue['customer_name']} was invoiced with {issue['applied_jurisdiction']} "
-            f"tax jurisdiction applied. The correct jurisdiction is {issue['correct_jurisdiction']} — "
-            f"tax exposure of ${issue['dollar_value']:,.2f} requiring post-invoice correction."
-        ),
+        "what_happened": _what_went_wrong_text(issue),
+        "what_went_wrong": _what_went_wrong_text(issue),
         "business_risk": [
             {
                 "risk_type": "Compliance Risk",
@@ -674,11 +672,7 @@ def tax_transaction(order_id: str, session_id: str = Depends(get_tax_demo_sessio
 
     order = dict(order)
     today = datetime.date.today().isoformat()
-    team_owner = {
-        "Pricing Team": "Olivia Bennett",
-        "Credit & AR": "Ethan Walker",
-        "Data Steward": "Sophia Reed",
-    }
+    team_owner = TAX_CROSS_TEAM_OWNERS
     overrides = _session_overrides(session_id)
     overrides[issue["issue_id"]] = {
         **overrides.get(issue["issue_id"], {}),
@@ -706,11 +700,7 @@ def tax_transaction(order_id: str, session_id: str = Depends(get_tax_demo_sessio
             "rate_difference": f"{issue['rate_difference']}%",
             "tax_exposure": float(issue.get("dollar_value") or 0),
         },
-        "what_went_wrong": (
-            f"{order['product_name']} was scheduled for invoicing under {issue['applied_jurisdiction']} tax jurisdiction "
-            f"because the ship-to address for {issue['customer_id']} was not updated in SAP after customer relocation — "
-            f"tax exposure of ${issue['dollar_value']:,.2f} on this order."
-        ),
+        "what_went_wrong": _what_went_wrong_text(issue, order.get("product_name")),
         "ai_recommendation": {
             "fix": (
                 f"Request Correction {order['order_id']} jurisdiction from {issue['applied_jurisdiction']} to "
@@ -777,9 +767,9 @@ def tax_closure(issue_id: str, session_id: str = Depends(get_tax_demo_session)):
         raise HTTPException(status_code=404, detail="Issue not found")
 
     if issue.get("status") == "Resolved":
-        snapshot = _session_overrides(session_id).get(issue_id, {}).get("closure_snapshot")
-        if snapshot:
-            return snapshot["closure"]
+        closure = _closure_from_snapshot(session_id, issue)
+        if closure:
+            return closure
 
     open_issues = [i for i in _load_issues(session_id) if i.get("status") == "Open"]
     metrics_before = _compute_metrics(open_issues)

@@ -10,6 +10,9 @@ router = APIRouter(prefix="/api/cco", tags=["cco"])
 
 DB_PATH = Path(__file__).resolve().parent.parent / "data" / "luminos_demo.db"
 
+# CCO executive approval: Central Hospital / ORD-028 ($156K) — not the CFO $142K cluster.
+EXECUTIVE_APPROVAL_CCO_ISSUE_ID = "CCO-ISSUE-002"
+
 _session_issue_overrides: dict[str, dict[str, dict]] = {}
 _initialized_cco_sessions: set[str] = set()
 CCO_CSV_SEED_VERSION = 4
@@ -339,8 +342,14 @@ def _ai_eligible(issue: dict) -> bool:
 
 
 def _build_high_value_approval_queue(open_issues: list[dict], limit: int = 1) -> list[dict]:
-    """Open issues ranked by penalty exposure — C-suite approval queue (highest $ first)."""
+    """CCO executive approval — always the designated $156K compliance breach (ORD-028)."""
     pending = [i for i in open_issues if _is_open_issue(i)]
+    designated = next(
+        (i for i in pending if i.get("issue_id") == EXECUTIVE_APPROVAL_CCO_ISSUE_ID),
+        None,
+    )
+    if designated:
+        return [designated]
     return sorted(pending, key=lambda x: -float(x.get("penalty_exposure", 0) or 0))[:limit]
 
 
@@ -365,7 +374,7 @@ def _compute_kpi_cards(open_issues: list[dict]) -> dict:
     audit_value = _audit_readiness_value(len(open_issues))
     predicted_annual = round(penalty_total * 43)
 
-    audit_display = f"{audit_value}% — At Risk" if audit_value < 80 else f"{audit_value}%"
+    audit_display = f"{audit_value}%"
 
     return {
         "regulatory_penalty_exposure": {
@@ -763,6 +772,24 @@ def _build_closure_payload(issue: dict, kpi_before: dict, kpi_after: dict) -> di
     }
 
 
+def _compliance_trend_status_audit(value: int) -> str:
+    return "Improving" if value >= 80 else "Needs Attention"
+
+
+def _build_compliance_trend(kpi_cards: dict) -> list[dict]:
+    """Baseline penalty/CAPA trends + audit readiness synced to KPI card."""
+    audit = kpi_cards["audit_readiness_score"]
+    return [
+        COMPLIANCE_TREND[0],
+        COMPLIANCE_TREND[1],
+        {
+            "kpi": audit["label"],
+            "trend": audit["display"],
+            "status": _compliance_trend_status_audit(int(audit["value"])),
+        },
+    ]
+
+
 def _build_month_on_month(kpi_cards: dict, open_count: int) -> list[dict]:
     """Trailing six months — penalty exposure, open issues, CAPA breach count."""
     penalty = float(kpi_cards["regulatory_penalty_exposure"]["value"])
@@ -796,7 +823,7 @@ def _build_dashboard(all_issues: list[dict]) -> dict:
         "kpi_cards": kpi_cards,
         "month_on_month": _build_month_on_month(kpi_cards, len(open_issues)),
         "policy_violation_tracker": POLICY_VIOLATION_TRACKER,
-        "compliance_trend": COMPLIANCE_TREND,
+        "compliance_trend": _build_compliance_trend(kpi_cards),
         "top_alerts": sorted_open[:8],
         "capa_status": CAPA_STATUS_OVERVIEW,
         "upcoming_deadlines": UPCOMING_DEADLINES,

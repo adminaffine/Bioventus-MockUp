@@ -20,6 +20,8 @@ import {
   CCO_KPI_CARD_META,
   CCO_KPI_ORDER,
   CCO_MONTH_ON_MONTH_SERIES,
+  ccoKpiDrilldownMetricLabel,
+  formatCcoKpiDrilldownMetric,
   issueRowHiddenDetails,
   resolveCcoHeatmapRows,
   rowsForCcoKpi,
@@ -64,15 +66,6 @@ export default function CCODashboard() {
     const issue = dashboard.all_open_issues.find((i) => i.issue_id === heatmapRow.issueId);
     return issue ? [issue] : [];
   }, [heatmapRow, dashboard]);
-
-  const resolutionTrendRows = useMemo(() => {
-    const trend = dashboard?.compliance_trend ?? [];
-    return trend.map((row) => ({
-      kpi: row.kpi,
-      trend: row.trend,
-      status: row.status,
-    }));
-  }, [dashboard?.compliance_trend]);
 
   const monthOnMonthRows = useMemo(() => {
     if (!dashboard) return [];
@@ -204,7 +197,7 @@ export default function CCODashboard() {
             style={{ minHeight: EXEC_SIDE_PANEL_CONTENT_HEIGHT }}
           >
             <CCOResolutionTrendChart
-              rows={resolutionTrendRows}
+              kpiCards={dashboard.kpi_cards}
               chartHeight={EXEC_SIDE_PANEL_CONTENT_HEIGHT}
             />
           </div>
@@ -255,8 +248,9 @@ export default function CCODashboard() {
                 <th className="py-2 pr-4">Account</th>
                 <th className="py-2 pr-4">Issue Type</th>
                 <th className="py-2 pr-4">Priority</th>
-                <th className="py-2 pr-4">Penalty Exposure</th>
-                <th className="py-2 pr-4">Invoice</th>
+                {kpiModalKey !== "audit_readiness_score" && (
+                  <th className="py-2 pr-4">{ccoKpiDrilldownMetricLabel(kpiModalKey)}</th>
+                )}
               </tr>
             </thead>
             <tbody>
@@ -269,8 +263,9 @@ export default function CCODashboard() {
                   <td className="py-2 pr-4">{issue.account_name}</td>
                   <td className="py-2 pr-4">{issue.issue_type}</td>
                   <td className="py-2 pr-4">{issue.priority}</td>
-                  <td className="py-2 pr-4">{money(issue.penalty_exposure)}</td>
-                  <td className="py-2 pr-4">{issue.invoice_status}</td>
+                  {kpiModalKey !== "audit_readiness_score" && (
+                    <td className="py-2 pr-4">{formatCcoKpiDrilldownMetric(issue, kpiModalKey)}</td>
+                  )}
                 </tr>
               ))}
             </tbody>

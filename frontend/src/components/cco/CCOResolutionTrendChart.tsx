@@ -1,20 +1,20 @@
 import ExecutiveGaugePanel from "../shared/ExecutiveGaugePanel";
 import { EXEC_SIDE_PANEL_CONTENT_HEIGHT } from "../../config/executiveDashboardLayout";
-import { buildResolutionTrendGauges } from "../../utils/executiveGaugeData";
-import type { ResolutionTrendRow } from "../../utils/resolutionTrendChart";
+import type { CCODashboard } from "../../services/api";
+import { buildCcoResolutionTrendGauges } from "../../utils/ccoDashboard";
 
 type Props = {
-  rows: ResolutionTrendRow[];
+  kpiCards: CCODashboard["kpi_cards"];
   chartHeight?: number;
 };
 
 export default function CCOResolutionTrendChart({
-  rows,
+  kpiCards,
   chartHeight = EXEC_SIDE_PANEL_CONTENT_HEIGHT,
 }: Props) {
   return (
     <ExecutiveGaugePanel
-      items={buildResolutionTrendGauges(rows)}
+      items={buildCcoResolutionTrendGauges(kpiCards)}
       chartHeight={chartHeight}
     />
   );

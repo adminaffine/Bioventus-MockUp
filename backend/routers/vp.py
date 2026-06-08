@@ -31,6 +31,12 @@ VP_TEAM_MEMBERS = [
 
 _PRIORITY_ORDER = {"CRITICAL": 0, "HIGH": 1, "MEDIUM": 2, "LOW": 3}
 
+VP_CROSS_TEAM_NOTIFY_OWNERS = {
+    "Tax Team": "Jennifer Mills",
+    "Pricing Team": "David Chen",
+    "SAP Team": "Marcus Hale",
+}
+
 _HEADLINE_TOTAL_OPEN = 47
 _HEADLINE_SLA_BREACH_RISK = 9
 _HEADLINE_ESCALATION_QUEUE = 4
@@ -406,10 +412,8 @@ def _issue_to_alert_row(issue: dict) -> dict:
 
 
 def _alert_sort_key(issue: dict) -> tuple:
-    sla = _sla_days_remaining(issue, default=999)
-    priority = _PRIORITY_ORDER.get(str(issue.get("priority") or "LOW").upper(), 3)
     exposure = float(issue.get("dollar_exposure") or 0)
-    return (sla, priority, -exposure)
+    return (-exposure,)
 
 
 def _build_dashboard(issues: list[dict]) -> dict:
@@ -914,6 +918,84 @@ def _vp_cross_team_notification_message(issue: dict, team: str) -> str:
     return f"Request for issue resolution follow-through on {order_id} for {account_name}"
 
 
+def _vp_tax_compliance_combined_message(issue: dict) -> str:
+    """Single cross-team recommendation when both Tax and Compliance are notified."""
+    order_id = issue.get("order_id") or "N/A"
+    account_id = issue.get("account_id") or ""
+    account_name = issue.get("account_name") or account_id
+    issue_type = issue.get("issue_type") or ""
+    capa_label = ", ".join(_capa_list(issue)) or "CAPA"
+    penalty = float(issue.get("penalty_exposure") or 0)
+
+    if "Exemption" in issue_type:
+        tax_action = f"tax exemption certificate renewal for {account_name}"
+    else:
+        tax_action = f"tax jurisdiction correction and address master update for {account_id}"
+
+    compliance_action = f"compliance filing correction with {capa_label} linkage"
+    if penalty > 0:
+        compliance_action += f" (${penalty:,.0f} penalty exposure)"
+
+    return f"Request for {tax_action} and {compliance_action} on {order_id}"
+
+
+def _vp_tax_compliance_merged_owner(issue: dict, tax_row: dict, comp_row: dict) -> str:
+    """Single accountable owner for the combined Tax & Compliance notification."""
+    primary_team = (issue.get("current_owner_team") or "").strip().lower()
+    if primary_team in ("tax team", "compliance team"):
+        owner = (issue.get("current_owner_name") or "").strip()
+        if owner:
+            return owner
+
+    secondary_team = (issue.get("secondary_owner_team") or "").strip().lower()
+    if secondary_team in ("tax team", "compliance team"):
+        owner = (issue.get("secondary_owner_name") or "").strip()
+        if owner:
+            return owner
+
+    for row in (comp_row, tax_row):
+        owner = (row.get("owner") or "").strip()
+        if owner:
+            return owner
+
+    return VP_CROSS_TEAM_NOTIFY_OWNERS["Tax Team"]
+
+
+def _merge_tax_compliance_cross_team_rows(issue: dict, notifications: list[dict]) -> list[dict]:
+    """Combine separate Tax and Compliance rows into one recommendation."""
+    tax_idx = next(
+        (i for i, n in enumerate(notifications) if (n.get("team") or "").strip().lower() == "tax team"),
+        None,
+    )
+    comp_idx = next(
+        (i for i, n in enumerate(notifications) if (n.get("team") or "").strip().lower() == "compliance team"),
+        None,
+    )
+    if tax_idx is None or comp_idx is None:
+        return notifications
+
+    tax_row = notifications[tax_idx]
+    comp_row = notifications[comp_idx]
+    message = _vp_tax_compliance_combined_message(issue)
+    owner = _vp_tax_compliance_merged_owner(issue, tax_row, comp_row)
+
+    statuses = {tax_row.get("team_status"), comp_row.get("team_status")}
+    merged_status = "Completed" if statuses == {"Completed"} else "Pending"
+
+    merged = {
+        "team": "Tax & Compliance Team",
+        "owner": owner,
+        "team_status": merged_status,
+        "notification": message,
+        "notified_about": message,
+    }
+
+    for idx in sorted([tax_idx, comp_idx], reverse=True):
+        notifications.pop(idx)
+    notifications.insert(min(tax_idx, comp_idx), merged)
+    return notifications
+
+
 def _build_vp_cross_team_notifications(issue: dict, closure_action: str = "approve") -> list[dict]:
     notifications: list[dict] = []
 
@@ -941,14 +1023,24 @@ def _build_vp_cross_team_notifications(issue: dict, closure_action: str = "appro
         notifications.append(
             _row(issue["secondary_owner_team"], issue["secondary_owner_name"], primary=False)
         )
-    notifications.append(
-        _row("Chief Financial Officer", "Victoria Hale", executive_role="Financial Review")
+    notified_teams = {(n.get("team") or "").strip().lower() for n in notifications}
+    for team in ("Tax Team", "Pricing Team"):
+        if team.lower() not in notified_teams:
+            notifications.append(_row(team, VP_CROSS_TEAM_NOTIFY_OWNERS[team]))
+            notified_teams.add(team.lower())
+    if "sap team" not in notified_teams:
+        notifications.append(_row("SAP Team", VP_CROSS_TEAM_NOTIFY_OWNERS["SAP Team"]))
+    return _merge_tax_compliance_cross_team_rows(issue, notifications)
+
+
+def _apply_fresh_cross_team_notifications(closure: dict, issue: dict) -> dict:
+    """Recompute cross-team rows so owner/copy updates apply to cached closure snapshots."""
+    result = dict(closure)
+    action = str(closure.get("action_taken") or issue.get("ai_decision") or "approve")
+    result["cross_team_notifications"] = _build_vp_cross_team_notifications(
+        issue, closure_action=action
     )
-    notifications.append(
-        _row("Chief Compliance Officer", "Sandra Lee", executive_role="Compliance / CAPA")
-    )
-    notifications.append(_row("SAP Team", "Marcus Hale"))
-    return notifications
+    return result
 
 
 def _build_closure(
@@ -1177,14 +1269,15 @@ def vp_escalate(req: VPEscalateRequest, session_id: str = Depends(get_vp_demo_se
 @router.get("/closure/{issue_id}")
 def vp_closure(issue_id: str, session_id: str = Depends(get_vp_demo_session)):
     overrides = _session_overrides(session_id)
-    snapshot = overrides.get(issue_id, {}).get("closure_snapshot")
-    if snapshot:
-        return snapshot
-
     issues = _load_issues(session_id)
     issue = next((i for i in issues if i["issue_id"] == issue_id), None)
     if not issue:
         raise HTTPException(status_code=404, detail=f"Issue {issue_id} not found")
+
+    snapshot = overrides.get(issue_id, {}).get("closure_snapshot")
+    if snapshot:
+        return _apply_fresh_cross_team_notifications(snapshot, issue)
+
     action = issue.get("ai_decision") or "approve"
     return _build_closure(issue, action, issues=issues)
 

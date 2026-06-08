@@ -30,6 +30,7 @@ import {
 
 function formatKpiValue(card: VPKpiCard): string {
   if (card.unit === "%") return `${card.value}%`;
+  if (card.unit === "open") return String(card.value);
   return `${card.value} ${card.unit}`;
 }
 

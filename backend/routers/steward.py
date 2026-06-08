@@ -20,29 +20,6 @@ STEWARD_TEAM_OWNERS = [
     {"owner_id": "DS-03", "owner_name": "Ethan Park"},
 ]
 
-DEMO_VALUE_BY_ISSUE: dict[str, float] = {
-    "DS-ISS-001": 12400.0,
-    "DS-ISS-002": 10500.0,
-    "DS-ISS-003": 6000.0,
-    "DS-ISS-004": 5000.0,
-    "DS-ISS-005": 3000.0,
-    "DS-ISS-006": 4000.0,
-    "DS-ISS-007": 2500.0,
-    "DS-ISS-008": 4800.0,
-    "DS-ISS-009": 5000.0,
-    "DS-ISS-010": 3000.0,
-    "DS-ISS-011": 2500.0,
-    "DS-ISS-012": 4000.0,
-    "DS-ISS-013": 3500.0,
-    "DS-ISS-014": 3000.0,
-    "DS-ISS-015": 3000.0,
-    "DS-ISS-016": 2200.0,
-    "DS-ISS-017": 3000.0,
-    "DS-ISS-018": 1800.0,
-    "DS-ISS-019": 6200.0,
-    "DS-ISS-020": 3840.0,
-}
-
 DEMO_TYPE_OVERRIDES: dict[str, str] = {
     "DS-ISS-005": "Hierarchy Mismatch",
     "DS-ISS-014": "Hierarchy Mismatch",
@@ -97,8 +74,6 @@ def _ensure_steward_owner(issue: dict) -> dict:
 
 def _merge_issue(issue: dict, session_id: str) -> dict:
     merged = dict(issue)
-    if issue["issue_id"] in DEMO_VALUE_BY_ISSUE:
-        merged["dollar_value"] = DEMO_VALUE_BY_ISSUE[issue["issue_id"]]
     if issue["issue_id"] in DEMO_TYPE_OVERRIDES:
         merged["issue_type"] = DEMO_TYPE_OVERRIDES[issue["issue_id"]]
     override = _session_overrides(session_id).get(issue["issue_id"])
@@ -395,11 +370,7 @@ def _build_dashboard_payload(session_id: str) -> dict:
     annualized_exposure = _annualized_exposure(total_exposure)
     my_queue = [i for i in open_issues if i.get("owner_id") == LOGGED_IN_STEWARD["owner_id"]]
     ai_queue = [i for i in my_queue if float(i.get("ai_confidence", 0)) >= 89]
-    priority_order = {"CRITICAL": 0, "HIGH": 1, "MEDIUM": 2, "LOW": 3}
-    sorted_alerts = sorted(
-        open_issues,
-        key=lambda x: (priority_order.get(x.get("priority", "LOW"), 9), -float(x.get("dollar_value", 0))),
-    )
+    sorted_alerts = sorted(open_issues, key=lambda x: -float(x.get("dollar_value", 0) or 0))
     target_count = min(8, max(5, len(sorted_alerts)))
     top_results = sorted_alerts[:target_count]
     return {

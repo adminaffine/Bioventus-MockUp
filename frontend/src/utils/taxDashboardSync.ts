@@ -1,5 +1,6 @@
 import type { TaxClosure, TaxDashboard, TaxIssueRow } from "../services/api";
 import { isHighValueRecordApproved } from "./highValueRecordSync";
+import { sortByDollarDesc } from "./personaKpiSort";
 
 export type TaxMetrics = {
   jurisdiction_mismatches: number;
@@ -204,7 +205,7 @@ export function syncTaxDashboardKpis(dashboard: TaxDashboard): TaxDashboard {
     ...dashboard,
     all_open_issues,
     tax_underpayment_issues: buildTaxUnderpaymentIssuesDesc(all_open_issues),
-    top_alerts: filterOpenRows(dashboard.top_alerts),
+    top_alerts: sortByDollarDesc(filterOpenRows(dashboard.top_alerts), (row) => row.dollar_value),
     ai_queue: filterOpenRows(dashboard.ai_queue),
     my_action_queue: filterOpenRows(dashboard.my_action_queue),
     kpi_cards,

@@ -28,7 +28,24 @@ function persistApprovedIds(ids: Set<string>): void {
   }
 }
 
-const approvedHighValueIds = loadApprovedIds();
+let approvedHighValueIds: Set<string> | null = null;
+
+function ensureApprovedIds(): Set<string> {
+  if (!approvedHighValueIds) {
+    approvedHighValueIds = loadApprovedIds();
+  }
+  return approvedHighValueIds;
+}
+
+/** Clears executive approval marks (called on full page load). */
+export function resetHighValueApprovalCache(): void {
+  try {
+    sessionStorage.removeItem(STORAGE_KEY);
+  } catch {
+    /* ignore */
+  }
+  approvedHighValueIds = new Set();
+}
 
 /** All record IDs in the same executive group (includes the given id). */
 export function getLinkedHighValueRecordIds(recordId: string): string[] {
@@ -37,8 +54,9 @@ export function getLinkedHighValueRecordIds(recordId: string): string[] {
 }
 
 export function isHighValueRecordApproved(recordId: string): boolean {
-  if (approvedHighValueIds.has(recordId)) return true;
-  return getLinkedHighValueRecordIds(recordId).some((id) => approvedHighValueIds.has(id));
+  const ids = ensureApprovedIds();
+  if (ids.has(recordId)) return true;
+  return getLinkedHighValueRecordIds(recordId).some((id) => ids.has(id));
 }
 
 /** True when CFO/CCO executive approval already removed linked records from persona KPIs. */
@@ -50,13 +68,14 @@ export function isExecutiveClosureKpiPatchNeeded(issueId: string): boolean {
 export function markHighValueRecordApproved(recordId: string): void {
   if (!isExecutiveHighValueRecord(recordId)) return;
 
+  const approved = ensureApprovedIds();
   const ids = getLinkedHighValueRecordIds(recordId);
   for (const id of ids) {
-    approvedHighValueIds.add(id);
+    approved.add(id);
     if (id.startsWith("CFO-")) markCfoAlertResolved(id);
     if (id.startsWith("CCO-")) markCcoIssueResolved(id);
   }
-  persistApprovedIds(approvedHighValueIds);
+  persistApprovedIds(approved);
 
   window.dispatchEvent(
     new CustomEvent(HIGH_VALUE_APPROVED_EVENT, { detail: { recordId, approvedIds: [...ids] } }),
