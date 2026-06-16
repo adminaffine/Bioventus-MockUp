@@ -1,7 +1,6 @@
 import type { CCOIssue, CFOAlert } from "../services/api";
 import { buildCcoHighValueApprovalQueue } from "./ccoDashboard";
-import { buildCfoHighValueApprovalQueue, isCfoAlertOpen } from "./cfoDashboard";
-import { isCCOIssueOpen } from "./ccoDashboard";
+import { buildCfoHighValueApprovalQueue } from "./cfoDashboard";
 
 /** CFO executive approval: Alliance Health / ORD-029 chargeback (Pricing + Finance). */
 export const EXECUTIVE_APPROVAL_CFO_ALERT_ID = "CFO-ALERT-002";
@@ -15,10 +14,14 @@ export const EXECUTIVE_APPROVAL_PRICING_ISSUE_ID = "PRK-ISS-012";
 /** Tax persona high-value issue (linked to CCO-ISSUE-002). */
 export const EXECUTIVE_APPROVAL_TAX_ISSUE_ID = "TAX-ISS-011";
 
+/** VP persona high-value issues (linked to CFO/CCO executive approvals). */
+export const EXECUTIVE_APPROVAL_VP_142K_ISSUE_ID = "VP-ISS-002";
+export const EXECUTIVE_APPROVAL_VP_156K_ISSUE_ID = "VP-ISS-003";
+
 /** Linked executive records — approving one updates KPIs across personas. */
 export const HIGH_VALUE_LINKED_GROUPS: readonly (readonly string[])[] = [
-  [EXECUTIVE_APPROVAL_CFO_ALERT_ID, EXECUTIVE_APPROVAL_PRICING_ISSUE_ID],
-  [EXECUTIVE_APPROVAL_CCO_ISSUE_ID, EXECUTIVE_APPROVAL_TAX_ISSUE_ID],
+  [EXECUTIVE_APPROVAL_CFO_ALERT_ID, EXECUTIVE_APPROVAL_PRICING_ISSUE_ID, EXECUTIVE_APPROVAL_VP_142K_ISSUE_ID],
+  [EXECUTIVE_APPROVAL_CCO_ISSUE_ID, EXECUTIVE_APPROVAL_TAX_ISSUE_ID, EXECUTIVE_APPROVAL_VP_156K_ISSUE_ID],
 ];
 
 export function isExecutiveHighValueRecord(recordId: string): boolean {
@@ -37,9 +40,6 @@ export function pickCfoExecutiveApprovalRecord(
   fromApi: CFOAlert[] | undefined,
   openAlerts: CFOAlert[],
 ): CFOAlert | null {
-  const open = openAlerts.filter(isCfoAlertOpen);
-  const designated = open.find((a) => a.alert_id === EXECUTIVE_APPROVAL_CFO_ALERT_ID);
-  if (designated) return designated;
   return buildCfoHighValueApprovalQueue(fromApi, openAlerts, 1)[0] ?? null;
 }
 
@@ -47,9 +47,6 @@ export function pickCcoExecutiveApprovalRecord(
   fromApi: CCOIssue[] | undefined,
   openIssues: CCOIssue[],
 ): CCOIssue | null {
-  const open = openIssues.filter(isCCOIssueOpen);
-  const designated = open.find((i) => i.issue_id === EXECUTIVE_APPROVAL_CCO_ISSUE_ID);
-  if (designated) return designated;
   return buildCcoHighValueApprovalQueue(fromApi, openIssues, 1)[0] ?? null;
 }
 

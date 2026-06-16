@@ -1,5 +1,6 @@
 import type { VPDashboard, VPHeadline, VPIssueRow, VPKpiCard, VPTeamHealthRow, VPTeamScorecardRow } from "../services/api";
 import { VP_DEMO_BASELINE, VP_TEAM_SCORECARD_BASELINE } from "../config/vpDemoBaseline";
+import { isHighValueRecordApproved } from "./highValueRecordSync";
 import { sortByDollarDesc } from "./personaKpiSort";
 import { getVpClosedIssueIds, isVpIssueResolved, VP_TOP_ALERTS_LIMIT } from "./vpWorkflowStorage";
 
@@ -99,6 +100,7 @@ export function teamHealthBarColor(score: number): string {
 export function isVpIssueStillOpen(issue: VPIssueRow, closedIds?: ReadonlySet<string>): boolean {
   const closed = closedIds instanceof Set ? closedIds : getVpClosedIssueIds();
   if (closed.has(issue.issue_id)) return false;
+  if (issue.issue_id && isHighValueRecordApproved(issue.issue_id)) return false;
   const status = (issue.status || "Open").trim().toLowerCase();
   if (status !== "open") return false;
   if (issue.ai_decision === "approve") return false;
@@ -154,9 +156,18 @@ function patchVpKpiCardsFromHeadline(cards: VPKpiCard[], headline: VPHeadline): 
 }
 
 /** Team scorecard open counts from live open issues — sums align with headline total. */
+const VP_SCORECARD_TEAM_SOURCES: Record<string, readonly string[]> = {
+  "Tax & Compliance Team": ["Tax Team", "Compliance Team"],
+};
+
+function vpScorecardOpenCount(open: VPIssueRow[], team: string): number {
+  const sources = VP_SCORECARD_TEAM_SOURCES[team] ?? [team];
+  return open.filter((issue) => sources.includes(issue.team ?? "")).length;
+}
+
 export function computeVpTeamScorecardFromOpen(open: VPIssueRow[]): VPTeamScorecardRow[] {
   return VP_TEAM_SCORECARD_BASELINE.map((row) => {
-    const openCount = open.filter((issue) => issue.team === row.team).length;
+    const openCount = vpScorecardOpenCount(open, row.team);
     const resolvedDelta = Math.max(0, row.open_issues - openCount);
     return {
       ...row,

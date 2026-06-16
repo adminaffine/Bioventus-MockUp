@@ -11,6 +11,7 @@ import {
 import { api, type VPClosure, type VPDashboard } from "../services/api";
 import { filterOpenVPDashboard, patchDashboardAfterVpClosedAction } from "../utils/vpDashboard";
 import { getVpClosedIssueIds, markVpIssueResolved, resetVpDemoWorkflow } from "../utils/vpWorkflowStorage";
+import { subscribeHighValueApproved } from "../utils/highValueRecordSync";
 
 type VPWorkflowContextValue = {
   dashboard: VPDashboard | null;
@@ -102,6 +103,13 @@ export function VPWorkflowProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     void refreshDashboard();
   }, [refreshDashboard]);
+
+  useEffect(() => {
+    return subscribeHighValueApproved(() => {
+      setDashboard((prev) => (prev ? filterOpenVPDashboard(prev, getVpClosedIssueIds()) : prev));
+      setDashboardRevision((n) => n + 1);
+    });
+  }, []);
 
   const applyAiAction = useCallback(
     async (issueId: string, action: "approve" | "reject") => {

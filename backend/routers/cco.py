@@ -342,15 +342,14 @@ def _ai_eligible(issue: dict) -> bool:
 
 
 def _build_high_value_approval_queue(open_issues: list[dict], limit: int = 1) -> list[dict]:
-    """CCO executive approval — always the designated $156K compliance breach (ORD-028)."""
+    """CCO executive approval — designated $156K compliance breach only (ORD-028)."""
+    _ = limit
     pending = [i for i in open_issues if _is_open_issue(i)]
     designated = next(
         (i for i in pending if i.get("issue_id") == EXECUTIVE_APPROVAL_CCO_ISSUE_ID),
         None,
     )
-    if designated:
-        return [designated]
-    return sorted(pending, key=lambda x: -float(x.get("penalty_exposure", 0) or 0))[:limit]
+    return [designated] if designated else []
 
 
 def _format_currency(value: float) -> str:

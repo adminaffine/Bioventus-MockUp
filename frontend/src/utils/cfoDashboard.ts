@@ -71,19 +71,16 @@ export function isCfoAlertOpen(alert: { status?: string; alert_id?: string }): b
   return true;
 }
 
-/** Highest dollar-exposure open alerts for executive approval (API field or client fallback). */
+/** Designated $142K executive approval only — no fallback to other alerts. */
 export function buildCfoHighValueApprovalQueue(
   fromApi: CFOAlert[] | undefined,
   openAlerts: CFOAlert[],
-  limit = 1,
+  _limit = 1,
 ): CFOAlert[] {
   const apiRows = (fromApi ?? []).filter(isCfoAlertOpen);
   const source = apiRows.length > 0 ? apiRows : openAlerts.filter(isCfoAlertOpen);
   const designated = source.find((a) => a.alert_id === EXECUTIVE_APPROVAL_CFO_ALERT_ID);
-  if (designated) return [designated];
-  return [...source]
-    .sort((a, b) => b.dollar_exposure - a.dollar_exposure)
-    .slice(0, limit);
+  return designated ? [designated] : [];
 }
 
 /** Recompute KPI cards from open alert rows (keeps dashboard cards in sync with Top Alerts). */

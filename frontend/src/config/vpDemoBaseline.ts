@@ -27,18 +27,18 @@ export const VP_DEMO_BASELINE = {
     "VP-ISS-008",
   ] as const,
   aiQueueIssueIds: ["VP-ISS-001", "VP-ISS-002", "VP-ISS-003"] as const,
-  teamScorecardTeams: ["Tax Team", "Pricing Team", "Compliance Team", "Finance Team"] as const,
+  teamScorecardTeams: ["Tax & Compliance Team", "Pricing Team", "Finance Team"] as const,
 } as const;
 
 /** Baseline team scorecard — open_issues sum to totalOpenIssues (47). */
 export const VP_TEAM_SCORECARD_BASELINE: VPTeamScorecardRow[] = [
   {
-    team: "Tax Team",
-    open_issues: 12,
+    team: "Tax & Compliance Team",
+    open_issues: 26,
     sla_status: "At Risk",
-    resolution_rate: 68,
+    resolution_rate: 66,
     health_status: "At Risk",
-    health_detail: "2 issues within 1 day of SLA breach",
+    health_detail: "CAPA-007 contributor unresolved; 2 issues within 1 day of SLA breach",
   },
   {
     team: "Pricing Team",
@@ -47,14 +47,6 @@ export const VP_TEAM_SCORECARD_BASELINE: VPTeamScorecardRow[] = [
     resolution_rate: 79,
     health_status: "Watch",
     health_detail: "Resolution rate improving but SLA risk remains",
-  },
-  {
-    team: "Compliance Team",
-    open_issues: 14,
-    sla_status: "At Risk",
-    resolution_rate: 65,
-    health_status: "At Risk",
-    health_detail: "CAPA-007 contributor unresolved",
   },
   {
     team: "Finance Team",

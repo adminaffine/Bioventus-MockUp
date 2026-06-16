@@ -101,15 +101,14 @@ def _ai_eligible_for_cfo_queue(alert: dict) -> bool:
 
 
 def _build_high_value_approval_queue(open_alerts: list[dict], limit: int = 1) -> list[dict]:
-    """CFO executive approval — always the designated $142K chargeback (ORD-029)."""
+    """CFO executive approval — designated $142K chargeback only (ORD-029)."""
+    _ = limit
     pending = [a for a in open_alerts if _is_open_alert(a)]
     designated = next(
         (a for a in pending if a.get("alert_id") == EXECUTIVE_APPROVAL_CFO_ALERT_ID),
         None,
     )
-    if designated:
-        return [designated]
-    return sorted(pending, key=lambda x: -float(x.get("dollar_exposure", 0) or 0))[:limit]
+    return [designated] if designated else []
 
 
 def _lookup_tax_issue(conn: sqlite3.Connection, order_id: str, account_id: str) -> dict | None:

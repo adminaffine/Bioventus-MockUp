@@ -44,12 +44,12 @@ _HEADLINE_TEAM_RESOLUTION_RATE = 71
 
 _TEAM_SCORECARD = [
     {
-        "team": "Tax Team",
-        "open_issues": 12,
+        "team": "Tax & Compliance Team",
+        "open_issues": 26,
         "sla_status": "At Risk",
-        "resolution_rate": 68,
+        "resolution_rate": 66,
         "health_status": "At Risk",
-        "health_detail": "2 issues within 1 day of SLA breach",
+        "health_detail": "CAPA-007 contributor unresolved; 2 issues within 1 day of SLA breach",
     },
     {
         "team": "Pricing Team",
@@ -60,14 +60,6 @@ _TEAM_SCORECARD = [
         "health_detail": "Resolution rate improving but SLA risk remains",
     },
     {
-        "team": "Compliance Team",
-        "open_issues": 14,
-        "sla_status": "At Risk",
-        "resolution_rate": 65,
-        "health_status": "At Risk",
-        "health_detail": "CAPA-007 contributor unresolved",
-    },
-    {
         "team": "Finance Team",
         "open_issues": 12,
         "sla_status": "On Track",
@@ -76,6 +68,10 @@ _TEAM_SCORECARD = [
         "health_detail": "Lowest breach risk this period",
     },
 ]
+
+_SCORECARD_TEAM_SOURCES = {
+    "Tax & Compliance Team": ("Tax Team", "Compliance Team"),
+}
 
 _VP_ALERTS_DDL = """
 CREATE TABLE IF NOT EXISTS vp_alerts (
@@ -277,7 +273,8 @@ def _effective_team_scorecard(issues: list[dict]) -> list[dict]:
     rows = []
     for baseline in _TEAM_SCORECARD:
         team = baseline["team"]
-        open_count = sum(1 for i in open_issues if i.get("team") == team)
+        sources = _SCORECARD_TEAM_SOURCES.get(team, (team,))
+        open_count = sum(1 for i in open_issues if i.get("team") in sources)
         resolved_delta = max(0, baseline["open_issues"] - open_count)
         rows.append(
             {

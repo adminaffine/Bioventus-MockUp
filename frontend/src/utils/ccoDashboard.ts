@@ -227,19 +227,16 @@ export function isCCOIssueOpen(issue: { status?: string; issue_id?: string }): b
   return true;
 }
 
-/** Highest penalty-exposure open issues for C-suite approval (API field or client fallback). */
+/** Designated $156K executive approval only — no fallback to other issues. */
 export function buildCcoHighValueApprovalQueue(
   fromApi: CCOIssue[] | undefined,
   openIssues: CCOIssue[],
-  limit = 1,
+  _limit = 1,
 ): CCOIssue[] {
   const apiRows = (fromApi ?? []).filter(isCCOIssueOpen);
   const source = apiRows.length > 0 ? apiRows : openIssues.filter(isCCOIssueOpen);
   const designated = source.find((i) => i.issue_id === EXECUTIVE_APPROVAL_CCO_ISSUE_ID);
-  if (designated) return [designated];
-  return [...source]
-    .sort((a, b) => b.penalty_exposure - a.penalty_exposure)
-    .slice(0, limit);
+  return designated ? [designated] : [];
 }
 
 function ccoTrendStatusForAudit(value: number): string {
