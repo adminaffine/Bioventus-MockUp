@@ -118,14 +118,14 @@ Ensure-AzExtension "containerapp"
 Ensure-AzExtension "staticwebapp"
 Ensure-SwaCli
 
-$RG = "rg_didq"
-$Prefix = "didq-"
+$RG = "rg_bv_demo"
+$Prefix = "bvdemo-"
 
 # Backend in eastus (Container Apps). Static Web Apps: eastus2 is a supported region for Microsoft.Web/staticSites.
 $BackendLocation = "eastus"
 $FrontendLocation = "eastus2"
 
-$SwaName = "didq-frontend"
+$SwaName = "bvdemo-frontend"
 $CaeName = "${Prefix}cae"
 $BackendAppName = "${Prefix}backend"
 
@@ -161,7 +161,7 @@ if ($CaeResourceId.IndexOf($rgSegment, [StringComparison]::OrdinalIgnoreCase) -l
   throw "Container Apps environment resource id is not under '$RG': $CaeResourceId"
 }
 
-$AcrPrefix = "didqacr"
+$AcrPrefix = "bvdemoacr"
 $AcrName = Get-AvailableAcrName $AcrPrefix
 $AcrLoginServer = "$AcrName.azurecr.io"
 
@@ -172,7 +172,7 @@ az acr login -n $AcrName --only-show-errors | Out-Null
 if ($LASTEXITCODE -ne 0) { throw "ACR login failed" }
 
 $ImageTag = "1.0.0-" + (Get-Date -Format "yyyyMMddHHmmss")
-$Image = "$AcrLoginServer/didq-backend:$ImageTag"
+$Image = "$AcrLoginServer/bvdemo-backend:$ImageTag"
 
 Write-Host "Building backend image locally..." -ForegroundColor Cyan
 docker build -t $Image -f (Join-Path $BackendDir "Dockerfile") $BackendDir

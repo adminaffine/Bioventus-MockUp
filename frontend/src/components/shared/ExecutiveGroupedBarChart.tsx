@@ -235,7 +235,7 @@ export default function ExecutiveGroupedBarChart({ data, series, chartHeight = 3
           ) : null}
           <Tooltip
             content={tooltipContent}
-            position={tooltipPosition}
+            position={tooltipPosition as TooltipProps<number, string>["position"]}
             cursor={{ fill: "rgba(148,163,184,0.12)" }}
             offset={0}
             allowEscapeViewBox={{ x: true, y: true }}

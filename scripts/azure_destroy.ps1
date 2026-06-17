@@ -9,7 +9,7 @@ if (-not (Get-Command az -ErrorAction SilentlyContinue)) {
   throw "Azure CLI (az) not found in PATH."
 }
 
-$RG = "rg_didq"
+$RG = "rg_bv_demo"
 
 Write-Host "This will delete the Azure resource group '$RG' and ALL resources inside it." -ForegroundColor Yellow
 
