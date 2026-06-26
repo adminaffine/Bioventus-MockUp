@@ -30,11 +30,13 @@ import {
   BadgeDollarSign,
   CopyCheck,
   Calendar,
+  LogOut,
 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { DATE_DISPLAY_FORMAT_OPTIONS, type DateDisplayFormatId } from "../lib/displayDate";
 import { useDateFormat } from "../context/DateFormatContext";
 import { EXECUTIVE_ROLE_IDS, type RoleId, VIEWING_AS_ROLES, useRole } from "../context/RoleContext";
+import { useAuth } from "../context/AuthContext";
 import { useAlerts } from "../context/AlertContext";
 import { RoleContextBanner } from "./RoleContextBanner";
 import { api, type AlertItem } from "../services/api";
@@ -200,6 +202,8 @@ function Layout({
   const location = useLocation();
   const navigate = useNavigate();
   const { currentRole, setRole } = useRole();
+  const { logout } = useAuth();
+  const viewingRoles = VIEWING_AS_ROLES;
   const { alertCount, acknowledgedIds } = useAlerts();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [bellDropdownOpen, setBellDropdownOpen] = useState(false);
@@ -737,7 +741,7 @@ function Layout({
               </button>
               {dropdownOpen && (
                 <div className="absolute right-0 top-full mt-1 w-80 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg z-50 py-1">
-                  {VIEWING_AS_ROLES.map((role) => (
+                  {viewingRoles.map((role) => (
                     <button
                       type="button"
                       key={role.id}
@@ -767,6 +771,21 @@ function Layout({
                 </div>
               )}
             </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                logout();
+                navigate("/login");
+              }}
+              className={cn(
+                "flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600",
+                darkMode ? "hover:bg-slate-700 text-slate-200" : "hover:bg-slate-100 text-slate-700",
+              )}
+            >
+              <LogOut className="w-4 h-4" />
+              <span className="text-sm">Sign out</span>
+            </button>
 
             <button
               type="button"

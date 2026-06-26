@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ChatProvider, useChat } from "./contexts/ChatContext";
+import { AuthProvider } from "./context/AuthContext";
+import AuthenticatedShell from "./components/AuthGate";
 import { RoleProvider } from "./context/RoleContext";
 import { DateFormatProvider } from "./context/DateFormatContext";
 import { AlertProvider } from "./context/AlertContext";
@@ -54,21 +56,13 @@ const CCODashboard = lazy(() => import("./pages/cco/CCODashboard"));
 const VPDashboard = lazy(() => import("./pages/vp/VPDashboard"));
 const VPIssueDetail = lazy(() => import("./pages/vp/VPIssueDetail"));
 const VPClosure = lazy(() => import("./pages/vp/VPClosure"));
+const Login = lazy(() => import("./pages/Login"));
 
 function App() {
-  const [darkMode, setDarkMode] = useState(() => {
-    try {
-      return localStorage.getItem("theme") === "dark";
-    } catch {
-      return false;
-    }
-  });
+  const [darkMode, setDarkMode] = useState(false);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", darkMode);
-    try {
-      localStorage.setItem("theme", darkMode ? "dark" : "light");
-    } catch {}
   }, [darkMode]);
 
   const setDarkModeCallback = useCallback((v: boolean) => setDarkMode(v), []);
@@ -76,19 +70,58 @@ function App() {
   return (
     <ChatProvider>
       <BrowserRouter>
-        <AlertProvider totalAlerts={18}>
-          <RoleProvider>
-            <TaxWorkflowProvider>
-            <PricingWorkflowProvider>
-            <CFOWorkflowProvider>
-            <CCOWorkflowProvider>
-            <StewardWorkflowProvider>
-            <VPWorkflowProvider>
-            <DateFormatProvider>
-            <Layout darkMode={darkMode} setDarkMode={setDarkModeCallback}>
-              <Suspense fallback={<PageLoadingSkeleton />}>
-                <Routes>
-                  <Route path="/" element={<Dashboard />} />
+        <AuthProvider>
+          <Routes>
+            <Route
+              path="/login"
+              element={
+                <Suspense fallback={<PageLoadingSkeleton />}>
+                  <Login />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/*"
+              element={
+                <AuthenticatedShell>
+                  <AlertProvider totalAlerts={18}>
+                    <RoleProvider>
+                      <TaxWorkflowProvider>
+                        <PricingWorkflowProvider>
+                          <CFOWorkflowProvider>
+                            <CCOWorkflowProvider>
+                              <StewardWorkflowProvider>
+                                <VPWorkflowProvider>
+                                  <DateFormatProvider>
+                                    <Layout darkMode={darkMode} setDarkMode={setDarkModeCallback}>
+                                      <Suspense fallback={<PageLoadingSkeleton />}>
+                                        <AppRoutes />
+                                      </Suspense>
+                                    </Layout>
+                                  </DateFormatProvider>
+                                </VPWorkflowProvider>
+                              </StewardWorkflowProvider>
+                            </CCOWorkflowProvider>
+                          </CFOWorkflowProvider>
+                        </PricingWorkflowProvider>
+                      </TaxWorkflowProvider>
+                    </RoleProvider>
+                  </AlertProvider>
+                  <AppChatPanel darkMode={darkMode} />
+                </AuthenticatedShell>
+              }
+            />
+          </Routes>
+        </AuthProvider>
+      </BrowserRouter>
+    </ChatProvider>
+  );
+}
+
+function AppRoutes() {
+  return (
+    <Routes>
+      <Route path="/" element={<Dashboard />} />
                   <Route path="/upload" element={<UploadAnalyze />} />
                   <Route path="/profiler" element={<Profiler />} />
                   <Route path="/integration" element={<Integration />} />
@@ -131,22 +164,9 @@ function App() {
                   <Route path="/vp-dashboard" element={<VPDashboard />} />
                   <Route path="/vp/issue/:issueId" element={<VPIssueDetail />} />
                   <Route path="/vp/closure/:issueId" element={<VPClosure />} />
-                  <Route path="/alerts" element={<AlertsPage />} />
-                </Routes>
-              </Suspense>
-            </Layout>
-            </DateFormatProvider>
-            </VPWorkflowProvider>
-            </StewardWorkflowProvider>
-            </CCOWorkflowProvider>
-            </CFOWorkflowProvider>
-            </PricingWorkflowProvider>
-            </TaxWorkflowProvider>
-          </RoleProvider>
-        </AlertProvider>
-        <AppChatPanel darkMode={darkMode} />
-      </BrowserRouter>
-    </ChatProvider>
+      <Route path="/alerts" element={<AlertsPage />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 }
 

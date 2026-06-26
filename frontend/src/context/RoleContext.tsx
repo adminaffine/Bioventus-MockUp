@@ -1,7 +1,9 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { formatVpDashboardContextBanner } from "../config/vpDemoBaseline";
+import { USER_PERSONA_STORAGE_KEY } from "../config/auth";
+import { useAuth } from "./AuthContext";
 
 export type RoleId = "admin" | "pricing_analyst" | "tax_compliance" | "data_steward" | "cfo" | "cco" | "vp_director";
 
@@ -148,21 +150,53 @@ export const VIEWING_AS_ROLES = ROLES.filter((r) => VIEWING_AS_ROLE_IDS.includes
 interface RoleContextType {
   currentRole: Role;
   setRole: (roleId: RoleId) => void;
+  accountType: "admin" | "user" | null;
+}
+
+function resolveRoleForAccount(accountType: "admin" | "user" | null): Role {
+  if (accountType === "admin") {
+    return ROLES.find((r) => r.id === "admin") ?? ROLES[0];
+  }
+  if (accountType === "user") {
+    try {
+      const saved = sessionStorage.getItem(USER_PERSONA_STORAGE_KEY) as RoleId | null;
+      if (saved && saved !== "admin" && ROLES.some((r) => r.id === saved)) {
+        return ROLES.find((r) => r.id === saved)!;
+      }
+    } catch {
+      /* ignore */
+    }
+    return ROLES.find((r) => r.id === "admin") ?? ROLES[0];
+  }
+  return ROLES[0];
 }
 
 const RoleContext = createContext<RoleContextType | null>(null);
 
 export function RoleProvider({ children }: { children: ReactNode }) {
-  const [currentRole, setCurrentRole] = useState<Role>(ROLES[0]);
+  const { accountType } = useAuth();
   const navigate = useNavigate();
+
+  const [currentRole, setCurrentRole] = useState<Role>(() => resolveRoleForAccount(accountType));
+
+  useEffect(() => {
+    setCurrentRole(resolveRoleForAccount(accountType));
+  }, [accountType]);
 
   const setRole = (roleId: RoleId) => {
     const role = ROLES.find((r) => r.id === roleId) ?? ROLES[0];
     setCurrentRole(role);
+    if (accountType === "user") {
+      try {
+        sessionStorage.setItem(USER_PERSONA_STORAGE_KEY, roleId);
+      } catch {
+        /* ignore */
+      }
+    }
     navigate(role.defaultRoute);
   };
 
-  return <RoleContext.Provider value={{ currentRole, setRole }}>{children}</RoleContext.Provider>;
+  return <RoleContext.Provider value={{ currentRole, setRole, accountType }}>{children}</RoleContext.Provider>;
 }
 
 export function useRole() {
