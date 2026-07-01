@@ -4,6 +4,12 @@ import { stewardDemoSessionHeaders } from "./stewardSession";
 import { cfoDemoSessionHeaders } from "./cfoSession";
 import { ccoDemoSessionHeaders } from "./ccoSession";
 import { vpDemoSessionHeaders } from "./vpSession";
+import {
+  normalizeTaxDashboard,
+  normalizeTaxMismatchRow,
+  normalizeTaxTransactionDetail,
+  normalizeSoldToState,
+} from "../utils/soldToFieldNormalize";
 
 const API_BASE = import.meta.env.VITE_API_URL || "";
 
@@ -139,7 +145,7 @@ export interface TaxCert {
   action_required: string;
 }
 
-/** Ship/bill jurisdiction vs sold-to; from /api/commercial/tax-jurisdiction-mismatches */
+/** Sold-to / bill jurisdiction vs sold-to; from /api/commercial/tax-jurisdiction-mismatches */
 export interface TaxJurisdictionMismatchRow {
   order_id: string;
   customer_id: string;
@@ -148,9 +154,9 @@ export interface TaxJurisdictionMismatchRow {
   sold_to_state: string;
   sold_to_source: "customer_master" | "demo_fallback";
   /** Intended filing jurisdiction (demo: same as sold-to) */
-  original_ship_bill_to: string;
+  original_sold_to_bill_to: string;
   /** State parsed from billing_address when it differs from sold-to */
-  mismatch_ship_bill_to: string;
+  mismatch_sold_to_bill_to: string;
   tax_risk: number;
   tag: "PRIORITY" | "ORPHAN" | "RECALLED" | null;
 }
@@ -193,7 +199,7 @@ export interface TaxIssueRow {
   ai_source: string;
   correct_jurisdiction: string;
   applied_jurisdiction: string;
-  ship_to_state: string;
+  sold_to_state: string;
   bill_to_state: string;
   product: string;
   sla_days_remaining: number;
@@ -248,7 +254,7 @@ export interface TaxIssueDetail {
 export interface TaxTransactionDetail {
   order_header: Record<string, string | number>;
   jurisdiction_breakdown: {
-    ship_to_state: string;
+    sold_to_state: string;
     bill_to_state: string;
     jurisdiction_applied: string;
     correct_jurisdiction: string;
@@ -1170,7 +1176,10 @@ export const api = {
       total_mismatch_count: number;
       total_order_value: number;
       estimated_tax_exposure: number;
-    }>("/api/commercial/tax-jurisdiction-mismatches", { cache: "no-store" }),
+    }>("/api/commercial/tax-jurisdiction-mismatches", { cache: "no-store" }).then((data) => ({
+      ...data,
+      rows: data.rows.map((row) => normalizeTaxMismatchRow(row as TaxJurisdictionMismatchRow & { original_ship_bill_to?: string; mismatch_ship_bill_to?: string; ship_to_state?: string })),
+    })),
   getTerritoryAlignment: () =>
     fetchApi<{
       records: TerritoryAlignment[];
@@ -1474,12 +1483,12 @@ export const api = {
     return fetchApi<{ prescriptions: unknown[]; total: number; page: number; size: number }>(`/api/rx/prescriptions?${q}`);
   },
   getRxExportViolationsUrl: () => `${API_BASE}/api/rx/export/violations`,
-  getTaxDashboard: () => taxFetch<TaxDashboard>("/api/tax/dashboard"),
+  getTaxDashboard: () => taxFetch<TaxDashboard>("/api/tax/dashboard").then(normalizeTaxDashboard),
   postTaxAiAction: (payload: { issue_id: string; action: "approve" | "reject" }) =>
     taxFetch<{ ok: boolean; issue_id: string; dashboard: TaxDashboard }>("/api/tax/ai-action", {
       method: "POST",
       body: JSON.stringify(payload),
-    }),
+    }).then((res) => ({ ...res, dashboard: normalizeTaxDashboard(res.dashboard) })),
   postTaxResolve: (payload: { issue_id: string }) =>
     taxFetch<{
       ok: boolean;
@@ -1490,7 +1499,7 @@ export const api = {
     }>("/api/tax/resolve", {
       method: "POST",
       body: JSON.stringify(payload),
-    }),
+    }).then((res) => ({ ...res, dashboard: normalizeTaxDashboard(res.dashboard) })),
   postTaxIssueAction: (payload: {
     issue_id: string;
     action: "acknowledge" | "reassign" | "update_address";
@@ -1507,9 +1516,18 @@ export const api = {
     }>("/api/tax/issue-action", {
       method: "POST",
       body: JSON.stringify(payload),
-    }),
-  getTaxIssue: (issueId: string) => taxFetch<TaxIssueDetail>(`/api/tax/issue/${issueId}`),
-  getTaxTransaction: (orderId: string) => taxFetch<TaxTransactionDetail>(`/api/tax/transaction/${orderId}`),
+    }).then((res) => ({
+      ...res,
+      issue: normalizeSoldToState(res.issue),
+      dashboard: normalizeTaxDashboard(res.dashboard),
+    })),
+  getTaxIssue: (issueId: string) =>
+    taxFetch<TaxIssueDetail>(`/api/tax/issue/${issueId}`).then((res) => ({
+      ...res,
+      issue: normalizeSoldToState(res.issue),
+    })),
+  getTaxTransaction: (orderId: string) =>
+    taxFetch<TaxTransactionDetail>(`/api/tax/transaction/${orderId}`).then(normalizeTaxTransactionDetail),
   getTaxClosure: (issueId: string) => taxFetch<TaxClosure>(`/api/tax/closure/${issueId}`),
   getPricingDashboard: () =>
     fetchApi<PricingDashboard>("/api/pricing/dashboard", { headers: pricingDemoSessionHeaders() }),

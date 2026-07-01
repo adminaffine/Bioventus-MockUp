@@ -122,7 +122,7 @@ export default function TransactionLineage() {
         <table className="mt-4 min-w-full text-sm">
           <thead>
             <tr className="text-left text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700">
-              <th className="py-2 pr-4">Ship-To State</th>
+              <th className="py-2 pr-4">Sold-To State</th>
               <th className="py-2 pr-4">Bill-To State</th>
               <th className="py-2 pr-4">Jurisdiction Applied</th>
               <th className="py-2 pr-4">Correct Jurisdiction</th>
@@ -132,7 +132,7 @@ export default function TransactionLineage() {
           </thead>
           <tbody>
             <tr>
-              <td className="py-2 pr-4">{jb.ship_to_state}</td>
+              <td className="py-2 pr-4">{jb.sold_to_state}</td>
               <td className="py-2 pr-4">{jb.bill_to_state}</td>
               <td className="py-2 pr-4 text-red-600 dark:text-red-400">
                 <span className="inline-flex items-center gap-1">

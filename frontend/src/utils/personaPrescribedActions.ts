@@ -9,7 +9,7 @@ export function buildTaxPrescribedActions(issue: {
   const applied = issue.applied_jurisdiction ?? "prior state";
   const correct = issue.correct_jurisdiction ?? "correct state";
   return [
-    `Step 1 — Verify ship-to address for ${issue.customer_id} in SAP`,
+    `Step 1 — Verify sold-to address for ${issue.customer_id} in SAP`,
     `Step 2 — Correct tax jurisdiction from ${applied} to ${correct}`,
     "Step 3 — Confirm order re-routes through correct state tax rule",
     "Step 4 — Mark issue resolved and close alert",

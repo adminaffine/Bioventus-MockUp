@@ -392,7 +392,7 @@ function sapTimingPhrase(alert: CFOAlert): string {
 /** Next action for tax owner row — matches Tax Issue Intelligence. */
 export function cfoNextActionTax(alert: CFOAlert): string | null {
   if (!alert.tax_owner_id) return null;
-  return `Correct ship-to jurisdiction in SAP ${sapTimingPhrase(alert)}`;
+  return `Correct sold-to jurisdiction in SAP ${sapTimingPhrase(alert)}`;
 }
 
 /** Next action for pricing owner row — matches Pricing Issue Intelligence. */

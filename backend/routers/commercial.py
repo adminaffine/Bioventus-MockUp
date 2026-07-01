@@ -233,11 +233,7 @@ def commercial_tax_certs():
 
 @router.get("/commercial/tax-jurisdiction-mismatches")
 def commercial_tax_jurisdiction_mismatches():
-    """Ship/bill vs sold-to jurisdiction mismatches derived from billing_address vs customer_master.state."""
-    if startup_cache.is_ready():
-        cached = startup_cache.get_cached_commercial("tax_jurisdiction_mismatches")
-        if cached:
-            return cached
+    """Sold-to / bill vs sold-to jurisdiction mismatches derived from billing_address vs customer_master.state."""
     return build_tax_jurisdiction_mismatches()
 
 
@@ -918,8 +914,8 @@ def _parse_state_from_billing_address(addr: str | None) -> str | None:
 def build_tax_jurisdiction_mismatches():
     """
     Compare customer_master.state (sold-to) to US state parsed from sales_orders.billing_address.
-    original_ship_bill_to is the intended jurisdiction (same as sold-to in this demo model).
-    mismatch_ship_bill_to is the jurisdiction implied by the billing address on the order.
+    original_sold_to_bill_to is the intended jurisdiction (same as sold-to in this demo model).
+    mismatch_sold_to_bill_to is the jurisdiction implied by the billing address on the order.
     """
     with _connect() as conn:
         raw = [
@@ -961,8 +957,8 @@ def build_tax_jurisdiction_mismatches():
                 "total_amount": round(amt, 2),
                 "sold_to_state": sold_to,
                 "sold_to_source": sold_source,
-                "original_ship_bill_to": sold_to,
-                "mismatch_ship_bill_to": parsed,
+                "original_sold_to_bill_to": sold_to,
+                "mismatch_sold_to_bill_to": parsed,
                 "tax_risk": tax_risk,
                 "tag": tag,
             }

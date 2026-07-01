@@ -541,13 +541,13 @@ export default function RevenueRisk() {
           </div>
 
           <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4">
-            <h3 className="font-semibold">Ship-to / Bill-to Jurisdiction Mismatches — Top 10 by Dollar Value</h3>
+            <h3 className="font-semibold">Sold-to / Bill-to Jurisdiction Mismatches — Top 10 by Dollar Value</h3>
             <p className="text-sm text-slate-600 dark:text-slate-300">
               {taxMismatchData.total_mismatch_count} total mismatches · ${fmtCurrency(taxMismatchData.total_order_value)} order value · Est. $
               {fmtCurrency(taxMismatchData.estimated_tax_exposure)} tax exposure
             </p>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              Sold-to uses <span className="font-mono">customer_master.state</span> when present. Original ship/bill mirrors sold-to (intended filing jurisdiction). Ship/bill-to parses the trailing{" "}
+              Sold-to uses <span className="font-mono">customer_master.state</span> when present. Original sold-to / bill-to mirrors sold-to (intended filing jurisdiction). Parsed sold-to / bill-to uses the trailing{" "}
               <span className="font-mono">ST ZIP</span> from <span className="font-mono">sales_orders.billing_address</span>. Orphan customers without a master row use{" "}
               <span className="font-mono">demo_fallback</span> sold-to <span className="font-mono">NC</span> for this demo.
             </p>
@@ -557,8 +557,8 @@ export default function RevenueRisk() {
                   <th className="text-left py-2">Order</th>
                   <th className="text-left py-2">Customer</th>
                   <th className="text-left py-2">Sold</th>
-                  <th className="text-left py-2">Original Ship/Bill-to</th>
-                  <th className="text-left py-2">Ship/Bill-to</th>
+                  <th className="text-left py-2">Original Sold-to / Bill-to</th>
+                  <th className="text-left py-2">Sold-to / Bill-to</th>
                   <th className="text-left py-2">Product</th>
                   <th className="text-left py-2">Amount</th>
                   <th className="text-left py-2">Tax Risk <InfoTooltip content={TOOLTIP_REV_TAX} /></th>
@@ -581,8 +581,8 @@ export default function RevenueRisk() {
                         {r.sold_to_state}
                         {r.sold_to_source === "demo_fallback" ? <span className="ml-1 text-[10px] text-slate-400">(demo)</span> : null}
                       </td>
-                      <td className="py-2">{r.original_ship_bill_to}</td>
-                      <td className="py-2">{r.mismatch_ship_bill_to}</td>
+                      <td className="py-2">{r.original_sold_to_bill_to}</td>
+                      <td className="py-2">{r.mismatch_sold_to_bill_to}</td>
                       <td className="py-2">{r.product_name}</td>
                       <td className="py-2">${r.total_amount.toLocaleString()}</td>
                       <td className="py-2">${r.tax_risk.toLocaleString()}</td>
@@ -805,8 +805,8 @@ export default function RevenueRisk() {
             <div className="space-y-2 text-sm text-slate-600 dark:text-slate-300">
               <p>
                 Sold-to <span className="font-mono">{taxMismatchModalRow.sold_to_state}</span> ({taxMismatchModalRow.sold_to_source}) vs billing-address jurisdiction{" "}
-                <span className="font-mono">{taxMismatchModalRow.mismatch_ship_bill_to}</span>. Intended filing jurisdiction (original ship/bill):{" "}
-                <span className="font-mono">{taxMismatchModalRow.original_ship_bill_to}</span>.
+                <span className="font-mono">{taxMismatchModalRow.mismatch_sold_to_bill_to}</span>. Intended filing jurisdiction (original sold-to / bill-to):{" "}
+                <span className="font-mono">{taxMismatchModalRow.original_sold_to_bill_to}</span>.
               </p>
               <p>
                 Order amount <strong>${taxMismatchModalRow.total_amount.toLocaleString()}</strong> · modeled tax risk <strong>${taxMismatchModalRow.tax_risk.toLocaleString()}</strong>.

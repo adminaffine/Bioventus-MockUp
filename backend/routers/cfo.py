@@ -433,7 +433,7 @@ def _sap_timing_phrase(alert: dict) -> str:
 def _build_cfo_next_action_tax(alert: dict) -> str | None:
     if not alert.get("tax_owner_id"):
         return None
-    return f"Correct ship-to jurisdiction in SAP {_sap_timing_phrase(alert)}"
+    return f"Correct sold-to jurisdiction in SAP {_sap_timing_phrase(alert)}"
 
 
 def _build_cfo_next_action_pricing(alert: dict) -> str | None:

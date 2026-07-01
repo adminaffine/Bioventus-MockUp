@@ -129,7 +129,7 @@ export const TOOLTIP_TERR_COMM_AT_RISK: TooltipContent = {
 };
 export const TOOLTIP_TERR_GAP: TooltipContent = {
   title: "Rep book vs order region",
-  formula: "rep_assigned_territory (CRM/route-of-record) compared to order_region (ship-to / geo on the order)",
+  formula: "rep_assigned_territory (CRM/route-of-record) compared to order_region (sold-to / geo on the order)",
   example: "When they differ, the rep earning commission may not match who should own the account geographically.",
   source: "territory_alignment columns",
   variant: "formula",

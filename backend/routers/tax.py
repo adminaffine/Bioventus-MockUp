@@ -65,7 +65,7 @@ def _what_went_wrong_text(issue: dict, product_name: str | None = None) -> str:
     product = product_name or issue.get("product") or "Product"
     return (
         f"{product} on {issue['order_id']} was taxed under {issue['applied_jurisdiction']} "
-        f"instead of {issue['correct_jurisdiction']} (ship-to {issue['ship_to_state']}, "
+        f"instead of {issue['correct_jurisdiction']} (sold-to {issue['sold_to_state']}, "
         f"bill-to {issue['bill_to_state']}) — ${float(issue.get('dollar_value') or 0):,.2f} exposure."
     )
 
@@ -178,7 +178,7 @@ def _data_quality_health(metrics: dict) -> list[dict]:
     mismatch_count = int(metrics.get("jurisdiction_mismatches", 0))
     pre_invoice_count = int(metrics.get("pre_invoice_alerts", 0))
     jurisdiction_accuracy = max(70, 96 - mismatch_count * 2)
-    ship_to_completeness = max(75, 95 - pre_invoice_count * 2)
+    sold_to_completeness = max(75, 95 - pre_invoice_count * 2)
     return [
         {
             "metric": "Tax Jurisdiction Accuracy",
@@ -186,9 +186,9 @@ def _data_quality_health(metrics: dict) -> list[dict]:
             "status": "At Risk" if jurisdiction_accuracy < 90 else "Healthy",
         },
         {
-            "metric": "Ship-To Address Completeness",
-            "score": ship_to_completeness,
-            "status": "At Risk" if ship_to_completeness < 90 else "Healthy",
+            "metric": "Sold-To Address Completeness",
+            "score": sold_to_completeness,
+            "status": "At Risk" if sold_to_completeness < 90 else "Healthy",
         },
     ]
 
@@ -380,7 +380,7 @@ def _build_dashboard_payload(session_id: str) -> dict:
                 "name": "Jurisdiction Mismatches",
                 "value": metrics["jurisdiction_mismatches"],
                 "unit": "open",
-                "description": "Orders where ship-to and bill-to state do not match",
+                "description": "Orders where sold-to and bill-to state do not match",
             },
             {
                 "name": "Pre-Invoice Alerts",
@@ -613,7 +613,7 @@ def tax_issue(issue_id: str, session_id: str = Depends(get_tax_demo_session)):
             "owner_id": issue["owner_id"],
             "owner_name": issue["owner_name"],
             "assigned_on": issue["opened_date"],
-            "next_action": f"Correct ship-to jurisdiction in SAP {'before invoice generation' if issue['pre_invoice'] else 'via post-invoice adjustment'}",
+            "next_action": f"Correct sold-to jurisdiction in SAP {'before invoice generation' if issue['pre_invoice'] else 'via post-invoice adjustment'}",
             "sla_remaining": f"{issue['sla_days_remaining']} days remaining",
         },
         "ai_recommendation": {
@@ -636,14 +636,14 @@ def tax_issue(issue_id: str, session_id: str = Depends(get_tax_demo_session)):
             }
         ],
         "prescribed_actions": [
-            f"Step 1 — Verify ship-to address for {issue['customer_id']} in SAP",
+            f"Step 1 — Verify sold-to address for {issue['customer_id']} in SAP",
             f"Step 2 — Correct tax jurisdiction from {issue['applied_jurisdiction']} to {issue['correct_jurisdiction']}",
             "Step 3 — Confirm order re-routes through correct state tax rule",
             "Step 4 — Mark issue resolved and close alert",
         ],
         "why_it_happened": issue["root_cause"],
         "preventive_actions": [
-            "Step 1 — Set up automated ship-to address verification at order creation",
+            "Step 1 — Set up automated sold-to address verification at order creation",
             "Step 2 — Add jurisdiction validation checkpoint before invoice generation",
             "Step 3 — Quarterly state tax database sync with SAP address master",
         ],
@@ -689,11 +689,11 @@ def tax_transaction(order_id: str, session_id: str = Depends(get_tax_demo_sessio
             "invoice_status": "Pending"
             if not order.get("revenue_recognized") or order.get("revenue_recognized") == "No"
             else "Invoiced",
-            "ship_to_state": issue["ship_to_state"],
+            "sold_to_state": issue["sold_to_state"],
             "bill_to_state": issue["bill_to_state"],
         },
         "jurisdiction_breakdown": {
-            "ship_to_state": issue["ship_to_state"],
+            "sold_to_state": issue["sold_to_state"],
             "bill_to_state": issue["bill_to_state"],
             "jurisdiction_applied": issue["applied_jurisdiction"],
             "correct_jurisdiction": issue["correct_jurisdiction"],
@@ -748,7 +748,7 @@ def tax_transaction(order_id: str, session_id: str = Depends(get_tax_demo_sessio
         ],
         "capa_linkage": {
             "capa_id": "CAPA-011",
-            "regulation": "State Tax Compliance — Ship-To Jurisdiction",
+            "regulation": "State Tax Compliance — Sold-To Jurisdiction",
             "status": "Open",
             "owner": f"{issue['owner_name']} — Tax Team Member",
             "due_date": "2026-05-20",

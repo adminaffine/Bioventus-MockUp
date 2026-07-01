@@ -101,7 +101,7 @@ function panelMeta(kpi: KpiPanelId): { subtitle: string; emptyHint: string } {
   switch (kpi) {
     case "Jurisdiction Mismatches":
       return {
-        subtitle: "All open orders where ship-to and bill-to state do not match",
+        subtitle: "All open orders where sold-to and bill-to state do not match",
         emptyHint: "No open jurisdiction mismatches.",
       };
     case "Pre-Invoice Alerts":

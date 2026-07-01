@@ -92,7 +92,7 @@ def create_tables(conn):
         issue_type TEXT, priority TEXT, dollar_value REAL, invoice_status TEXT,
         urgency_label TEXT, owner_id TEXT, owner_name TEXT, ai_fix TEXT,
         ai_confidence REAL, ai_source TEXT, correct_jurisdiction TEXT,
-        applied_jurisdiction TEXT, ship_to_state TEXT, bill_to_state TEXT,
+        applied_jurisdiction TEXT, sold_to_state TEXT, bill_to_state TEXT,
         product TEXT, sla_days_remaining INTEGER, opened_date TEXT, status TEXT,
         address_record TEXT, pre_invoice INTEGER, rate_difference REAL,
         capa_id TEXT, root_cause TEXT, risk_compliance TEXT, risk_penalty TEXT,
@@ -338,7 +338,7 @@ def seed_commercial_tables(conn):
             "issue_id", "order_id", "customer_id", "customer_name", "issue_type", "priority",
             "dollar_value", "invoice_status", "urgency_label", "owner_id", "owner_name", "ai_fix",
             "ai_confidence", "ai_source", "correct_jurisdiction", "applied_jurisdiction",
-            "ship_to_state", "bill_to_state", "product", "sla_days_remaining", "opened_date",
+            "sold_to_state", "bill_to_state", "product", "sla_days_remaining", "opened_date",
             "status", "address_record", "pre_invoice", "rate_difference", "capa_id", "root_cause",
             "risk_compliance", "risk_penalty", "risk_legal", "risk_jurisdiction",
         ],
@@ -559,7 +559,7 @@ def seed_commercial_tables(conn):
 
 
 def seed_tax_workflow_customers(conn):
-    """Tax persona demo customers (ship-to vs bill-to jurisdiction mismatches)."""
+    """Tax persona demo customers (sold-to vs bill-to jurisdiction mismatches)."""
     rows = [
         ("CUST-0892", "Central", "Hospital", "contact892@bioventus-demo.com", "(602) 500-0892", "1975-01-01", "88 South Ave", "Phoenix", "AZ", "85001", "USA", "Health System", "Active", None, None, None, None, None, None, None, None, None, None),
         ("CUST-1087", "Riverside", "Clinic", "contact1087@bioventus-demo.com", "(602) 501-1087", "1976-01-01", "200 River Rd", "Phoenix", "AZ", "85002", "USA", "Spine Center", "Active", None, None, None, None, None, None, None, None, None, None),
@@ -813,7 +813,7 @@ def seed_chargeback_disputes(conn):
         ("CHB-009", "GPC-009", "ORD-004", "CUST-1004", "Triangle System", "EXOGEN Lite", "Vizient", "Tier2", 90.00, 2, 180.00, "TRUE", "Resolved", None, "2026-02-01", 0, "Resolved. Full credit $180 issued to CUST-1004.", "Prior period resolved. Demonstrates workflow effectiveness."),
         ("CHB-010", None, "ORD-031", "CUST-2011", "Northeast Medical", "Exogen", None, None, None, 34, 28400.00, "FALSE", "Under Review", 30, "2026-04-05", 1, "List price applied on ORD-031 — GPO Tier-2 rate not refreshed. Jurisdiction mismatch blocks invoice until corrected.", "Tax + pricing override on Northeast Medical — $28,400 exposure."),
         ("CHB-011", None, "ORD-025", "CUST-3042", "Valley Health", "Exogen", None, None, None, 4, 12180.00, "FALSE", "Under Review", 30, "2026-03-27", 1, "GPO contract non-compliance flagged on ORD-025 — audit review required for Valley Health.", "GPO audit flag — $12,180 contract reconciliation exposure."),
-        ("CHB-012", None, "ORD-033", "CUST-0892", "Central Hospital", "Exogen", None, None, None, 1, 3300.00, "FALSE", "Under Review", 30, "2026-04-02", 1, "Tax jurisdiction mismatch on ORD-033 — Illinois ship-to vs Missouri bill-to.", "Jurisdiction correction required before invoicing — $3,300 exposure."),
+        ("CHB-012", None, "ORD-033", "CUST-0892", "Central Hospital", "Exogen", None, None, None, 1, 3300.00, "FALSE", "Under Review", 30, "2026-04-02", 1, "Tax jurisdiction mismatch on ORD-033 — Illinois sold-to vs Missouri bill-to.", "Jurisdiction correction required before invoicing — $3,300 exposure."),
     ]
     conn.executemany("INSERT INTO chargeback_disputes VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", rows)
 

@@ -231,7 +231,7 @@ export default function IssueIntelligence() {
         <table className="mt-4 min-w-full text-sm">
           <thead>
             <tr className="text-left text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700">
-              <th className="py-2 pr-4">Ship-To State</th>
+              <th className="py-2 pr-4">Sold-To State</th>
               <th className="py-2 pr-4">Bill-To State</th>
               <th className="py-2 pr-4">Jurisdiction Applied</th>
               <th className="py-2 pr-4">Correct Jurisdiction</th>
@@ -241,7 +241,7 @@ export default function IssueIntelligence() {
           </thead>
           <tbody>
             <tr className="border-b border-slate-100 dark:border-slate-700/60">
-              <td className="py-2 pr-4">{issue.ship_to_state}</td>
+              <td className="py-2 pr-4">{issue.sold_to_state}</td>
               <td className="py-2 pr-4">{issue.bill_to_state}</td>
               <td className="py-2 pr-4 text-red-600 dark:text-red-400">{issue.applied_jurisdiction}</td>
               <td className="py-2 pr-4 text-emerald-600 dark:text-emerald-400">{issue.correct_jurisdiction}</td>

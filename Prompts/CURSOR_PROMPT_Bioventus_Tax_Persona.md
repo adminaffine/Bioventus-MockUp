@@ -74,10 +74,10 @@ CUST-3042,Valley,Health,contact3042@bioventus-demo.com,(614) 503-3042,1978-01-01
 Create this NEW file with the following content verbatim. This is the canonical data source for the Tax Team's issue intelligence workflow.
 
 ```csv
-issue_id,order_id,customer_id,customer_name,issue_type,priority,dollar_value,invoice_status,urgency_label,owner_id,owner_name,ai_fix,ai_confidence,ai_source,correct_jurisdiction,applied_jurisdiction,ship_to_state,bill_to_state,product,sla_days_remaining,opened_date,status,address_record,pre_invoice,rate_difference,capa_id,root_cause,risk_compliance,risk_penalty,risk_legal,risk_jurisdiction
-TAX-ISS-001,ORD-022,CUST-2011,Northeast Medical,Tax Jurisdiction Mismatch,HIGH,8240.0,Pre-Invoice,2 days to invoice,Unassigned,Unassigned,Correct to North Carolina Jurisdiction,92,SAP Address Master + State Tax Database,North Carolina,Arizona,NC,AZ,Exogen,2,2026-04-05,Open,ADDR-0441,1,2.5,CAPA-007,Ship-to address for CUST-2011 not updated in SAP after customer relocated from Arizona to North Carolina — system defaulted to bill-to state for tax jurisdiction assignment.,Preventable if corrected before invoicing,8240.0 avoidable,State audit trigger avoidable,Contributing to 83% At Risk flag
-TAX-ISS-002,ORD-019,CUST-3042,Valley Health,Tax Jurisdiction Mismatch,HIGH,6180.0,Pre-Invoice,4 days to invoice,Unassigned,Unassigned,Correct to Ohio Jurisdiction,91,SAP Address Master + State Tax Database,Ohio,Arizona,OH,AZ,Exogen,4,2026-04-03,Open,ADDR-0380,1,2.5,CAPA-007,Ship-to address for CUST-3042 not updated in SAP after customer relocated from Arizona to Ohio.,Preventable if corrected before invoicing,6180.0 avoidable,State audit trigger avoidable,Contributing to 83% At Risk flag
-TAX-ISS-003,ORD-018,CUST-2011,Northeast Medical,Tax Jurisdiction Mismatch,HIGH,8240.0,Post-Invoice,6 days since invoiced,Unassigned,Unassigned,Correct to North Carolina — Post-Invoice correction required,89,SAP Address Master + State Tax Database,North Carolina,Arizona,NC,AZ,Exogen,2,2026-04-05,Open,ADDR-0441,0,2.5,CAPA-011,Ship-to address for CUST-2011 was not updated in SAP after customer relocated from Arizona to North Carolina.,Post-invoice correction required,8240.0 penalty risk,State audit trigger active,Contributing to 83% At Risk flag
+issue_id,order_id,customer_id,customer_name,issue_type,priority,dollar_value,invoice_status,urgency_label,owner_id,owner_name,ai_fix,ai_confidence,ai_source,correct_jurisdiction,applied_jurisdiction,sold_to_state,bill_to_state,product,sla_days_remaining,opened_date,status,address_record,pre_invoice,rate_difference,capa_id,root_cause,risk_compliance,risk_penalty,risk_legal,risk_jurisdiction
+TAX-ISS-001,ORD-022,CUST-2011,Northeast Medical,Tax Jurisdiction Mismatch,HIGH,8240.0,Pre-Invoice,2 days to invoice,Unassigned,Unassigned,Correct to North Carolina Jurisdiction,92,SAP Address Master + State Tax Database,North Carolina,Arizona,NC,AZ,Exogen,2,2026-04-05,Open,ADDR-0441,1,2.5,CAPA-007,Sold-to address for CUST-2011 not updated in SAP after customer relocated from Arizona to North Carolina — system defaulted to bill-to state for tax jurisdiction assignment.,Preventable if corrected before invoicing,8240.0 avoidable,State audit trigger avoidable,Contributing to 83% At Risk flag
+TAX-ISS-002,ORD-019,CUST-3042,Valley Health,Tax Jurisdiction Mismatch,HIGH,6180.0,Pre-Invoice,4 days to invoice,Unassigned,Unassigned,Correct to Ohio Jurisdiction,91,SAP Address Master + State Tax Database,Ohio,Arizona,OH,AZ,Exogen,4,2026-04-03,Open,ADDR-0380,1,2.5,CAPA-007,Sold-to address for CUST-3042 not updated in SAP after customer relocated from Arizona to Ohio.,Preventable if corrected before invoicing,6180.0 avoidable,State audit trigger avoidable,Contributing to 83% At Risk flag
+TAX-ISS-003,ORD-018,CUST-2011,Northeast Medical,Tax Jurisdiction Mismatch,HIGH,8240.0,Post-Invoice,6 days since invoiced,Unassigned,Unassigned,Correct to North Carolina — Post-Invoice correction required,89,SAP Address Master + State Tax Database,North Carolina,Arizona,NC,AZ,Exogen,2,2026-04-05,Open,ADDR-0441,0,2.5,CAPA-011,Sold-to address for CUST-2011 was not updated in SAP after customer relocated from Arizona to North Carolina.,Post-invoice correction required,8240.0 penalty risk,State audit trigger active,Contributing to 83% At Risk flag
 TAX-ISS-004,ORD-015,CUST-1087,Riverside Clinic,Tax Jurisdiction Mismatch,MEDIUM,4320.0,Post-Invoice,12 days since invoiced,TAX-03,Jennifer Mills,Correct to correct state jurisdiction,88,SAP Address Master + State Tax Database,North Carolina,Arizona,NC,AZ,Exogen,5,2026-03-20,Open,ADDR-0290,0,2.5,CAPA-007,Billing address mismatch not caught at order creation for CUST-1087.,Post-invoice correction required,4320.0 penalty risk,Audit risk active,Contributing to 83% At Risk flag
 TAX-ISS-005,ORD-011,CUST-0892,Central Hospital,Tax Jurisdiction Mismatch,MEDIUM,3640.0,Post-Invoice,18 days since invoiced,TAX-05,Robert Chan,Correct to correct state jurisdiction,85,SAP Address Master + State Tax Database,North Carolina,Arizona,NC,AZ,Exogen,7,2026-03-08,Open,ADDR-0120,0,2.5,CAPA-007,Billing address mismatch for CUST-0892 not flagged during order processing.,Post-invoice correction required,3640.0 penalty risk,Audit risk active,Contributing to 83% At Risk flag
 ```
@@ -93,7 +93,7 @@ c.execute("""CREATE TABLE tax_jurisdiction_issues (
     issue_type TEXT, priority TEXT, dollar_value REAL, invoice_status TEXT,
     urgency_label TEXT, owner_id TEXT, owner_name TEXT, ai_fix TEXT,
     ai_confidence REAL, ai_source TEXT, correct_jurisdiction TEXT,
-    applied_jurisdiction TEXT, ship_to_state TEXT, bill_to_state TEXT,
+    applied_jurisdiction TEXT, sold_to_state TEXT, bill_to_state TEXT,
     product TEXT, sla_days_remaining INTEGER, opened_date TEXT, status TEXT,
     address_record TEXT, pre_invoice INTEGER, rate_difference REAL,
     capa_id TEXT, root_cause TEXT, risk_compliance TEXT, risk_penalty TEXT,
@@ -113,7 +113,7 @@ conn.executemany(
          r["issue_type"], r["priority"], float(r["dollar_value"]), r["invoice_status"],
          r["urgency_label"], r["owner_id"], r["owner_name"], r["ai_fix"],
          float(r["ai_confidence"]), r["ai_source"], r["correct_jurisdiction"],
-         r["applied_jurisdiction"], r["ship_to_state"], r["bill_to_state"],
+         r["applied_jurisdiction"], r["sold_to_state"], r["bill_to_state"],
          r["product"], int(r["sla_days_remaining"]), r["opened_date"], r["status"],
          r["address_record"], int(r["pre_invoice"]), float(r["rate_difference"]),
          r["capa_id"], r["root_cause"], r["risk_compliance"], r["risk_penalty"],
@@ -205,10 +205,10 @@ def tax_dashboard():
         },
         "data_quality_health": [
             {"metric": "Tax Jurisdiction Accuracy", "score": 83, "status": "At Risk"},
-            {"metric": "Ship-To Address Completeness", "score": 91, "status": "At Risk"},
+            {"metric": "Sold-To Address Completeness", "score": 91, "status": "At Risk"},
         ],
         "kpi_cards": [
-            {"name": "Jurisdiction Mismatches", "value": jurisdiction_mismatches, "unit": "open", "description": "Orders where ship-to and bill-to state do not match"},
+            {"name": "Jurisdiction Mismatches", "value": jurisdiction_mismatches, "unit": "open", "description": "Orders where sold-to and bill-to state do not match"},
             {"name": "Pre-Invoice Alerts", "value": pre_invoice_alerts, "unit": "open", "description": "Orders with mismatches that can still be corrected before invoicing"},
             {"name": "Compliance Exposure", "value": total_exposure, "unit": "dollars", "description": "Total penalty and legal risk from active jurisdiction mismatches"},
             {"name": "Tax Overpayments", "value": tax_overpayments if tax_overpayments > 0 else 12400.0, "unit": "dollars", "description": "Orders where a higher tax rate was incorrectly applied"},
@@ -246,7 +246,7 @@ def tax_issue(issue_id: str):
         },
         "what_happened": (
             f"Order {issue['order_id']} for {issue['customer_name']} is scheduled to be invoiced in "
-            f"{issue['sla_days_remaining']} days. The ship-to address is {issue['correct_jurisdiction']} "
+            f"{issue['sla_days_remaining']} days. The sold-to address is {issue['correct_jurisdiction']} "
             f"but the system has applied {issue['applied_jurisdiction']} tax jurisdiction — "
             f"tax exposure of ${issue['dollar_value']:,.2f} if invoiced as-is."
         ) if issue["pre_invoice"] else (
@@ -264,7 +264,7 @@ def tax_issue(issue_id: str):
             "owner_id": issue["owner_id"],
             "owner_name": issue["owner_name"],
             "assigned_on": issue["opened_date"],
-            "next_action": f"Correct ship-to jurisdiction in SAP {'before invoice generation' if issue['pre_invoice'] else 'via post-invoice adjustment'}",
+            "next_action": f"Correct sold-to jurisdiction in SAP {'before invoice generation' if issue['pre_invoice'] else 'via post-invoice adjustment'}",
             "sla_remaining": f"{issue['sla_days_remaining']} days remaining",
         },
         "ai_recommendation": {
@@ -283,14 +283,14 @@ def tax_issue(issue_id: str):
             }
         ],
         "prescribed_actions": [
-            f"Step 1 — Verify ship-to address for {issue['customer_id']} in SAP",
+            f"Step 1 — Verify sold-to address for {issue['customer_id']} in SAP",
             f"Step 2 — Correct tax jurisdiction from {issue['applied_jurisdiction']} to {issue['correct_jurisdiction']}",
             "Step 3 — Confirm order re-routes through correct state tax rule",
             "Step 4 — Mark issue resolved and close alert",
         ],
         "why_it_happened": issue["root_cause"],
         "preventive_actions": [
-            "Step 1 — Set up automated ship-to address verification at order creation",
+            "Step 1 — Set up automated sold-to address verification at order creation",
             "Step 2 — Add jurisdiction validation checkpoint before invoice generation",
             "Step 3 — Quarterly state tax database sync with SAP address master",
         ],
@@ -335,11 +335,11 @@ def tax_transaction(order_id: str):
             "product": order["product_name"],
             "order_date": order["order_date"],
             "invoice_status": "Pending" if not order.get("revenue_recognized") or order.get("revenue_recognized") == "No" else "Invoiced",
-            "ship_to_state": issue["ship_to_state"],
+            "sold_to_state": issue["sold_to_state"],
             "bill_to_state": issue["bill_to_state"],
         },
         "jurisdiction_breakdown": {
-            "ship_to_state": issue["ship_to_state"],
+            "sold_to_state": issue["sold_to_state"],
             "bill_to_state": issue["bill_to_state"],
             "jurisdiction_applied": issue["applied_jurisdiction"],
             "correct_jurisdiction": issue["correct_jurisdiction"],
@@ -348,7 +348,7 @@ def tax_transaction(order_id: str):
         },
         "what_went_wrong": (
             f"{order['product_name']} was scheduled for invoicing under {issue['applied_jurisdiction']} tax jurisdiction "
-            f"because the ship-to address for {issue['customer_id']} was not updated in SAP after customer relocation — "
+            f"because the sold-to address for {issue['customer_id']} was not updated in SAP after customer relocation — "
             f"tax exposure of ${issue['dollar_value']:,.2f} on this order."
         ),
         "ai_recommendation": {
@@ -376,7 +376,7 @@ def tax_transaction(order_id: str):
         ],
         "capa_linkage": {
             "capa_id": "CAPA-011",
-            "regulation": "State Tax Compliance — Ship-To Jurisdiction",
+            "regulation": "State Tax Compliance — Sold-To Jurisdiction",
             "status": "Open",
             "owner": f"{issue['owner_name']} — Tax Team Member",
             "due_date": "2026-05-20",
@@ -500,7 +500,7 @@ export interface TaxIssueRow {
   ai_source: string;
   correct_jurisdiction: string;
   applied_jurisdiction: string;
-  ship_to_state: string;
+  sold_to_state: string;
   bill_to_state: string;
   product: string;
   sla_days_remaining: number;
@@ -541,7 +541,7 @@ export interface TaxIssueDetail {
 
 export interface TaxTransactionDetail {
   order_header: Record<string, string | number>;
-  jurisdiction_breakdown: { ship_to_state: string; bill_to_state: string; jurisdiction_applied: string; correct_jurisdiction: string; rate_difference: string; tax_exposure: number };
+  jurisdiction_breakdown: { sold_to_state: string; bill_to_state: string; jurisdiction_applied: string; correct_jurisdiction: string; rate_difference: string; tax_exposure: number };
   what_went_wrong: string;
   ai_recommendation: { fix: string; confidence: number; source: string };
   order_trail: { date: string; event: string; jurisdiction: string; status: string; correction: string }[];
@@ -681,8 +681,8 @@ On mount: call api.getTaxTransaction(orderId) → set data
 
 Layout sections (in this order):
   1. Breadcrumb: "← Back to Issue" → navigates to /tax/issue/${data.issue_id}
-  2. Order Header card — table row: Order ID | Customer | Product | Order Date | Invoice Status | Ship-To State | Bill-To State
-  3. Tax Jurisdiction Breakdown — table: Ship-To State | Bill-To State | Jurisdiction Applied | Correct Jurisdiction | Rate Difference | Tax Exposure
+  2. Order Header card — table row: Order ID | Customer | Product | Order Date | Invoice Status | Sold-To State | Bill-To State
+  3. Tax Jurisdiction Breakdown — table: Sold-To State | Bill-To State | Jurisdiction Applied | Correct Jurisdiction | Rate Difference | Tax Exposure
      - Applied jurisdiction column: red text + warning icon
      - Correct jurisdiction column: green text + check icon
   4. What Went Wrong — plain text paragraph from data.what_went_wrong
@@ -802,8 +802,8 @@ In `backend/routers/capa.py`, inside the `_base_capas()` function, append these 
 {
     "capa_id": "CAPA-007",
     "title": "State Tax Compliance — Multi-Jurisdiction Address Accuracy",
-    "description": "Multiple sales orders processed with incorrect tax jurisdictions due to stale ship-to addresses in SAP. Customers CUST-2011, CUST-3042, CUST-1087, CUST-0892 impacted. Tax exposure of $26,380.",
-    "root_cause": "Ship-to address update workflow in SAP does not trigger tax jurisdiction re-validation. Customers who relocated between states retain the old jurisdiction until manual correction.",
+    "description": "Multiple sales orders processed with incorrect tax jurisdictions due to stale sold-to addresses in SAP. Customers CUST-2011, CUST-3042, CUST-1087, CUST-0892 impacted. Tax exposure of $26,380.",
+    "root_cause": "Sold-to address update workflow in SAP does not trigger tax jurisdiction re-validation. Customers who relocated between states retain the old jurisdiction until manual correction.",
     "severity": "HIGH",
     "status": "In Progress",
     "regulation": "State Tax Compliance — Multi-Jurisdiction Filing",
@@ -814,19 +814,19 @@ In `backend/routers/capa.py`, inside the `_base_capas()` function, append these 
     "owner_role": "Chief Compliance Officer",
     "created_date": "2026-04-01",
     "due_date": "2026-05-10",
-    "corrective_action": "Correct all 5 jurisdiction mismatches in SAP. Update ship-to address master for all affected customers. File amended tax returns where required.",
-    "preventive_action": "Add automated ship-to address jurisdiction validation at order creation. Quarterly state tax database sync with SAP address master.",
+    "corrective_action": "Correct all 5 jurisdiction mismatches in SAP. Update sold-to address master for all affected customers. File amended tax returns where required.",
+    "preventive_action": "Add automated sold-to address jurisdiction validation at order creation. Quarterly state tax database sync with SAP address master.",
     "linked_regulation_slug": "state-tax-compliance",
     "priority": 7,
 },
 {
     "capa_id": "CAPA-011",
-    "title": "State Tax Compliance — Ship-To Jurisdiction ORD-018",
-    "description": "ORD-018 for CUST-2011 Northeast Medical was processed with Arizona jurisdiction despite ship-to address being in North Carolina. Post-invoice correction required.",
-    "root_cause": "Same root cause as CAPA-007. Ship-to address for CUST-2011 not updated after relocation.",
+    "title": "State Tax Compliance — Sold-To Jurisdiction ORD-018",
+    "description": "ORD-018 for CUST-2011 Northeast Medical was processed with Arizona jurisdiction despite sold-to address being in North Carolina. Post-invoice correction required.",
+    "root_cause": "Same root cause as CAPA-007. Sold-to address for CUST-2011 not updated after relocation.",
     "severity": "HIGH",
     "status": "Open",
-    "regulation": "State Tax Compliance — Ship-To Jurisdiction",
+    "regulation": "State Tax Compliance — Sold-To Jurisdiction",
     "affected_dataset": "sales_orders",
     "affected_records": ["ORD-018"],
     "affected_product": "Exogen",
@@ -835,7 +835,7 @@ In `backend/routers/capa.py`, inside the `_base_capas()` function, append these 
     "created_date": "2026-04-05",
     "due_date": "2026-05-20",
     "corrective_action": "Correct ORD-018 jurisdiction from Arizona to North Carolina in SAP. Update ADDR-0441 in address master for CUST-2011.",
-    "preventive_action": "Add jurisdiction validation checkpoint before invoice generation for all orders where ship-to state differs from sold-to state.",
+    "preventive_action": "Add jurisdiction validation checkpoint before invoice generation for all orders where sold-to state differs from sold-to state.",
     "linked_regulation_slug": "state-tax-compliance",
     "priority": 8,
 },

@@ -192,7 +192,7 @@ def _owner_next_action(issue: dict) -> str:
         )
     if issue_type == "Tax Jurisdiction Gap":
         return (
-            f"Correct Ship-To jurisdiction from {issue.get('current_jurisdiction', '—')} "
+            f"Correct Sold-To jurisdiction from {issue.get('current_jurisdiction', '—')} "
             f"to {issue.get('correct_jurisdiction', '—')} for {customer_id}"
         )
     if issue_type == "Orphan Record":
@@ -223,7 +223,7 @@ def _build_prescribed_actions(issue: dict) -> list[str]:
         ]
     if issue_type == "Tax Jurisdiction Gap":
         return [
-            f"Step 1 — Verify ship-to address for {customer_id} in SAP",
+            f"Step 1 — Verify sold-to address for {customer_id} in SAP",
             (
                 f"Step 2 — Correct tax jurisdiction from {issue.get('current_jurisdiction', '—')} "
                 f"to {issue.get('correct_jurisdiction', '—')} in SAP address master"
@@ -384,13 +384,13 @@ def _build_dashboard_payload(session_id: str) -> dict:
         "data_quality_health": [
             {"metric": "Customer Hierarchy Completeness", "score": 82, "status": "At Risk"},
             {"metric": "IDN Mapping Accuracy", "score": 79, "status": "Critical"},
-            {"metric": "Ship-To / Bill-To Match Rate", "score": 91, "status": "At Risk"},
+            {"metric": "Sold-To / Bill-To Match Rate", "score": 91, "status": "At Risk"},
             {"metric": "Master Record Uniqueness", "score": 96.4, "status": "Healthy"},
         ],
         "kpi_cards": [
             {"name": "Hierarchy Mapping Issues", "value": len(hierarchy_mismatches), "unit": "open", "description": "IDN / GPO parent links missing or incorrectly assigned in SAP master", "filter_type": "hierarchy"},
             {"name": "Orphan Records", "value": len(orphan_records), "unit": "open", "description": "Customer records with no parent hierarchy assigned — revenue unmapped", "filter_type": "orphan"},
-            {"name": "Tax Jurisdiction Gaps", "value": len(tax_jurisdiction_gaps), "unit": "open", "description": "Ship-To / Bill-To state mismatches creating tax exposure on invoices", "filter_type": "tax_gap"},
+            {"name": "Tax Jurisdiction Gaps", "value": len(tax_jurisdiction_gaps), "unit": "open", "description": "Sold-To / Bill-To state mismatches creating tax exposure on invoices", "filter_type": "tax_gap"},
             {"name": "Stale Master Records", "value": len(stale_records), "unit": "open", "description": "Customer records not validated or refreshed against IQVIA in 90+ days", "filter_type": "stale"},
             {"name": "Duplicate Suspects", "value": len(duplicate_suspects), "unit": "open", "description": "Potential duplicate customer entries flagged by AI deduplication scan", "filter_type": "duplicate"},
         ],

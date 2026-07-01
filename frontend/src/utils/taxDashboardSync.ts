@@ -1,4 +1,5 @@
 import type { TaxClosure, TaxDashboard, TaxIssueRow } from "../services/api";
+import { normalizeTaxDashboard } from "./soldToFieldNormalize";
 import { isHighValueRecordApproved } from "./highValueRecordSync";
 import { sortByDollarDesc } from "./personaKpiSort";
 
@@ -166,7 +167,8 @@ export function buildTaxClosureKpiImpact(
 
 /** Recompute KPI cards and headline from open issues (includes multi-jurisdiction high-value rows). */
 export function syncTaxDashboardKpis(dashboard: TaxDashboard): TaxDashboard {
-  const all_open_issues = collectTaxOpenIssues(dashboard);
+  const normalized = normalizeTaxDashboard(dashboard);
+  const all_open_issues = collectTaxOpenIssues(normalized);
   const metrics = computeTaxMetricsFromIssues(all_open_issues);
   const {
     total_exposure: totalExposure,
@@ -182,9 +184,9 @@ export function syncTaxDashboardKpis(dashboard: TaxDashboard): TaxDashboard {
     : 0;
 
   const jurisdictionAccuracy = Math.max(70, 96 - jurisdictionMismatches * 2);
-  const shipToCompleteness = Math.max(75, 95 - preInvoiceAlerts * 2);
+  const soldToCompleteness = Math.max(75, 95 - preInvoiceAlerts * 2);
 
-  const kpi_cards = dashboard.kpi_cards.map((card) => {
+  const kpi_cards = normalized.kpi_cards.map((card) => {
     switch (card.name) {
       case "Jurisdiction Mismatches":
         return { ...card, value: jurisdictionMismatches };
@@ -202,22 +204,22 @@ export function syncTaxDashboardKpis(dashboard: TaxDashboard): TaxDashboard {
   });
 
   return {
-    ...dashboard,
+    ...normalized,
     all_open_issues,
     tax_underpayment_issues: buildTaxUnderpaymentIssuesDesc(all_open_issues),
-    top_alerts: sortByDollarDesc(filterOpenRows(dashboard.top_alerts), (row) => row.dollar_value),
-    ai_queue: filterOpenRows(dashboard.ai_queue),
-    my_action_queue: filterOpenRows(dashboard.my_action_queue),
+    top_alerts: sortByDollarDesc(filterOpenRows(normalized.top_alerts), (row) => row.dollar_value),
+    ai_queue: filterOpenRows(normalized.ai_queue),
+    my_action_queue: filterOpenRows(normalized.my_action_queue),
     kpi_cards,
     headline: {
-      ...dashboard.headline,
+      ...normalized.headline,
       total_exposure: totalExposure,
       active_mismatches: jurisdictionMismatches,
       pre_invoice_alerts: preInvoiceAlerts,
       annualized_exposure: totalExposure * 12,
       next_invoice_days: nextInvoiceDays,
     },
-    data_quality_health: dashboard.data_quality_health.map((row) => {
+    data_quality_health: normalized.data_quality_health.map((row) => {
       if (row.metric === "Tax Jurisdiction Accuracy") {
         return {
           ...row,
@@ -225,11 +227,11 @@ export function syncTaxDashboardKpis(dashboard: TaxDashboard): TaxDashboard {
           status: jurisdictionAccuracy < 90 ? "At Risk" : "Healthy",
         };
       }
-      if (row.metric === "Ship-To Address Completeness") {
+      if (row.metric === "Sold-To Address Completeness") {
         return {
           ...row,
-          score: shipToCompleteness,
-          status: shipToCompleteness < 90 ? "At Risk" : "Healthy",
+          score: soldToCompleteness,
+          status: soldToCompleteness < 90 ? "At Risk" : "Healthy",
         };
       }
       return row;
