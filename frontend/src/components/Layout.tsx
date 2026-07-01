@@ -661,7 +661,7 @@ function Layout({
             darkMode ? "bg-amber-500/10 border-amber-500/30 text-amber-200" : "bg-amber-50 border-amber-200 text-amber-800"
           )}
         >
-          <span className="font-medium">BV · Live Application Environment · Synthetic Data Only</span>
+          <span className="font-medium">DI/DQ · Live Application Environment · Synthetic Data Only</span>
           <div className="flex items-center gap-2">
             <div className="alert-bell-container relative">
               <button

@@ -38,11 +38,11 @@ export default function Login() {
       <div className="w-full max-w-md">
         <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-xl p-8">
           <div className="text-center mb-8">
-            <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-600 text-white font-bold text-lg">
-              B
+            <div className="inline-flex min-h-12 px-4 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-600 via-violet-600 to-purple-700 text-white font-bold text-sm tracking-wide shadow-md">
+              DI-DQ
             </div>
             <h1 className="mt-4 text-2xl font-bold text-slate-900 dark:text-slate-100">
-              Bioventus Intelligence
+              Data Quality & Compliance Intelligence
             </h1>
             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
               Sign in to continue
